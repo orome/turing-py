@@ -90,15 +90,14 @@ class TuringMachine(object):
     neither the input alphabet nor the tape alphabet.
     """
 
-    def __init__(self, states, initial_state, accept_state, reject_state,
-                 transition, *args, **kw):
+    def __init__(self, states, initial_state, accept_state, reject_state, transition, *args, **kw):
         self.states = states
         self.accept_state = accept_state
         self.reject_state = reject_state
         self.initial_state = initial_state
         self.transition = transition
 
-    def _log_state(self, string, head_location, current_state):
+    def _log_state(self, string: str, head_location, current_state):
         """Logs a visual representation of the current head location, state,
         and contents of the tape of this Turing machine.
         For example, if the Turing machine has ``'_010_'`` on its input tape
@@ -118,7 +117,7 @@ class TuringMachine(object):
         logger.debug(' ' * head_location + '^')
         logger.debug(' ' * head_location + str(current_state))
 
-    def __call__(self, string):
+    def __call__(self, string: str):
         """Runs the computer program specified by this Turing machine on
         `string`.
         `string` must be a Python string whose first and last characters are
@@ -179,5 +178,4 @@ class TuringMachine(object):
             current_state = new_state
             # direction is either L or R, which are defined to be -1 and +1
             head_location += direction
-        raise Exception('Turing machine somehow halted without accepting or'
-                        ' rejecting.')
+        raise Exception('Turing machine somehow halted without accepting or'' rejecting.')
