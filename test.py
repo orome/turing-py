@@ -88,7 +88,7 @@ for q in increment_machine.steps(18):
 print("\n-------- Auto halt 500 steps; complete configuration, commented")
 increment_machine = TuringMachine('r', increment, initial_tape="101011")
 for q in increment_machine.steps(500, auto_halt=True):
-    print("\t\t".join([q.str_complete_configuration(), q.step_comment]))
+    print("\t\t".join([q.str_complete_configuration().ljust(8), q.step_comment]))
 
 # TBD - Add support for moving left
 # increment_machine = TuringMachine('r', increment, initial_tape="111111")
@@ -162,6 +162,15 @@ for q in increasing_machine.steps(1000, include_current=False):
 print("\n-------- 40 steps with generator; complete config")
 for q in increasing_machine.steps(40):
     print(q.str_complete_configuration())
+
+print("\n-------- 40 steps with generator; complete config on two lines")
+for q in increasing_machine.steps(40):
+    print(q.display_text())
+
+print("\n-------- 100 steps with generator; complete config on two lines")
+print("\n")
+for q in increasing_machine.steps(1000):
+    print_over(q.display_text(), backup=True, delay=0.02)
 
 print("\n-------- Turing's compact complete configurations (Petzold p. 92, Turing p. 235)")
 print(':'.join([x.str_complete_configuration() for x in increasing_machine.steps(8)]))
