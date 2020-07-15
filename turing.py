@@ -46,6 +46,10 @@ L = Step.L
 R = Step.R
 N = Step.N
 
+_HIGHLIGHT_SYMBOL = "\u001b[44m\u001b[37;1m" #"\u001b[44m\u001b[36;1m"
+_HIGHLIGHT_M_CONFIG = "\u001b[44m\u001b[37;1m" #"\u001b[43;1m\u001b[31;1m"
+_HIGHLIGHT_RESET = "\u001b[0m"
+
 
 # TBD - Grow left
 # TBD - Validaton of arguments and rules
@@ -117,6 +121,15 @@ class TuringMachine(object):
 
     def str_complete_configuration(self) -> str:
         return ''.join([str(elem) for elem in self.complete_configuration()])
+
+    # TBD - Expand with decoration, highlight, arguments
+    # TBD - Pull higlighting out into own utility function
+    def display_text(self) -> str:
+        tape = list(self.str_tape())
+        annotation = [' '] * len(tape)
+        tape[self._position] = _HIGHLIGHT_SYMBOL + tape[self._position] + _HIGHLIGHT_RESET
+        annotation[self._position] = _HIGHLIGHT_M_CONFIG + self._m_configuration + _HIGHLIGHT_RESET
+        return ''.join(tape) + '\n' + ''.join(annotation)
 
     def step(self, debug: bool = False) -> None:
         # Providing a simple tuple is allowed; force to Behavior
