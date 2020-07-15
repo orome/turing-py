@@ -59,7 +59,6 @@ class TuringMachine(object):
 
     def __init__(self, initial_m_configuration: MConfig, transitions: Transitions,
                  initial_tape: Union[Tape, str] = str(E), initial_position: int = 0,
-                 #halt_state=100,
                  *args, **kw):
 
         # Process alternate forms for arguments (tape a string, tuple for matched symbols with same behavior)

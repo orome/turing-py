@@ -134,30 +134,26 @@ print("\n-------- 40 steps with generator; tape")
 for q in increasing_machine.steps(40):
     print(q.str_tape())
 
-# TBD - Fix and make more pythonic
-print("\n-------- 300 steps with generator; tape filtered")
+# TBD - Fix and make more pythonic <<<
+print("\n-------- 1000 steps with generator; tape filtered and trimmed")
 printed_q = []
-for q in increasing_machine.steps(300):
-    pq = q.str_tape().rstrip(E)
+for q in increasing_machine.steps(1000, include_current=False):
+    pq = q.str_tape().rstrip(E).lstrip('ə')
     if pq not in printed_q:
-        if not pq.find("x") >= 0:
+        if not pq.find("x") >= 0 and pq[-1] == '0':
             print(pq)
         printed_q = printed_q + [pq]
-        #print(printed_q)
 
 print("\n-------- 40 steps with generator; complete config")
 for q in increasing_machine.steps(40):
     print(q.str_complete_configuration())
 
 print("\n-------- Turing's compact complete configurations (Petzold p. 92, Turing p. 235)")
-increasing_machine.reset()
 print(':'.join([x.str_complete_configuration() for x in increasing_machine.steps(8)]))
 
 
 
-# Test generator and stepping using simple alternating machine
-
-
+# print("##############################################")
 
 #
 # print("\n ----- Generator (reset)")
