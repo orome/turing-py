@@ -50,8 +50,8 @@ L = Step.L
 R = Step.R
 N = Step.N
 
-_HIGHLIGHT_SYMBOL = "\u001b[44m\u001b[37;1m" #"\u001b[44m\u001b[36;1m"
-_HIGHLIGHT_M_CONFIG = "\u001b[44m\u001b[37;1m" #"\u001b[43;1m\u001b[31;1m"
+_HIGHLIGHT_SYMBOL = "\u001b[44m\u001b[37;1m"    # "\u001b[44m\u001b[36;1m"
+_HIGHLIGHT_M_CONFIG = "\u001b[44m\u001b[37;1m"  # "\u001b[43;1m\u001b[31;1m"
 _HIGHLIGHT_RESET = "\u001b[0m"
 
 
@@ -68,9 +68,12 @@ _HIGHLIGHT_RESET = "\u001b[0m"
 # TBD - Graphic/matplotlib version of display_text
 # TBD - CLI
 # TBD - Skeleton tables
+# TBD - Square root of 2 program (and accuracy test)
 
-# TBD - Behavior and transition format and argument requirements <<<
+# TBD - Document behavior and transition format and argument requirements <<<
 
+
+# ======== A simple Turing machine class
 
 class TuringMachine(object):
 
@@ -189,6 +192,7 @@ class TuringMachine(object):
             self._prev_m_configuration = self._m_configuration
             self._prev_position = self._position
             self.step(debug)
+            # Stop generating steps if the complete configuration has not changed
             if auto_halt:
                 if (self._prev_tape == self._tape and
                         self._prev_m_configuration == self._m_configuration and
@@ -196,16 +200,6 @@ class TuringMachine(object):
                     return
             yield self
             step += 1
-        # else:
-        #     return
-
-
-
-    # # @tape.setter
-    # def tape(self, t: dict) -> None:
-    #     self._tape = t
-
-
 
 
 # ======== Some errors
