@@ -26,7 +26,7 @@ class Step(IntEnum):
 # TBD - Improve format documentation
 # m-configs and symbols are one char (ints tolerated for symbols)
 # valid m-configs and sybols are those (inferred) from transitions
-# simply stops of no missing rule found CONFIRM <<<
+# simply makes no change to the complete configuration if no matching rule is found (unless debugging)
 Symbol = chr
 MConfig = chr
 Tape = List[Symbol]
@@ -152,9 +152,17 @@ class TuringMachine(object):
         # REV - Better way of detecting missing behavior for current m_config or current symbol
         except KeyError:
             if debug:
-                raise KeyError
+                # If debugging, treat absense of a behavior for the current configuration as an error
+                try:
+                    self.transitions[self._m_configuration]
+                except KeyError:
+                    raise UnknownMConfig(self._m_configuration)
+                try:
+                    self.transitions[self._m_configuration][self._tape[self._position]]
+                except KeyError:
+                    raise UnknownSymbol(self._tape[self._position])
             else:
-                # Unless debugging, this do nothing if now matching behavior is found
+                # If not debugging, do nothing if no behavior matching the current configuration is found
                 return
         for op in behavior.ops:
             if isinstance(op, Step):
@@ -198,24 +206,31 @@ class TuringMachine(object):
     #     self._tape = t
 
 
-# TBD- Some potential exceptions to throw
-# class UnknownSymbol(Exception):
-#     """This exception is raised when the Turing machine encounters a symbol
-# that does not appear in the transition dictionary.
-#     """
-#     pass
-#
-#
-# class UnknownState(Exception):
-#     """This exception is raised when the Turing machine enters a state that
-#     does not appear in the transition dictionary.
-#     """
-#     pass
-#
-#
-# class BadSymbol(Exception):
-#     """This exception is raised when the user attempts to specify a tape
-#     alphabet that includes strings of length not equal to one.
-#     """
-#     pass
 
+
+# ======== Some errors
+
+class TuringError(Exception):
+    def __init__(self, bad_token: chr = '') -> None:
+        self.bad_token = bad_token
+
+
+class UnknownSymbol(TuringError):
+    """An encountered symbol is not present in the recognized configurations in the transition table."""
+
+    def __str__(self) -> str:
+        return str('Unrecognized symbol: {0}'.format(self.bad_token))
+
+
+class UnknownMConfig(TuringError):
+    """An encountered m-configuration is not present in the recognized configurations in the transition table."""
+
+    def __str__(self) -> str:
+        return str('Unrecognized m-configuration: {0}'.format(self.bad_token))
+
+
+class BadToken(TuringError):
+    """An m-confugration or symbol is not a single character or string of length 1."""
+
+    def __str__(self) -> str:
+        return str('Invalid toekn: {0}'.format(self.bad_token))
