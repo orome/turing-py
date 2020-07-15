@@ -23,6 +23,10 @@ class Step(IntEnum):
     N = 0
 
 
+# TBD - Improve format documentation
+# m-configs and symbols are one char (ints tolerated for symbols)
+# valid m-configs and sybols are those (inferred) from transitions
+# simply stops of no missing rule found CONFIRM <<<
 Symbol = chr
 MConfig = chr
 Tape = List[Symbol]
@@ -55,9 +59,18 @@ _HIGHLIGHT_RESET = "\u001b[0m"
 # TBD - Validaton of arguments and rules
 # TBD - Check single character symbols and m_configurations for presentations that assume it
 # TBD: Fix tape extention and associated copying; add both directions <<<
-# TBD - Add support for lists of m_configurations (with same behavior) in transitions
-# TBD - Add support for lists of m_configurations of  "else"/"any"
+# REV - Add support for lists of m_configurations of  "else"/"any"/"all"; for now must explictly list
 # TBD - Allow various ways of providing arguments to constructor
+# TBD - Support richer m_configuration labels (e.g. as comments)
+# TBD - Better formatting of comments with tape/config; as new output form or option to str_ functions in class <<<
+# TBD - Expand display_text() with decoration, highlight, arguments, comment on additiona line, long state name, etc.
+# TBD - Pull highlightint out into seperate utility <<<
+# TBD - Graphic/matplotlib version of display_text
+# TBD - CLI
+# TBD - Skeleton tables
+
+# TBD - Behavior and transition format and argument requirements <<<
+
 
 class TuringMachine(object):
 
