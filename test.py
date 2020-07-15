@@ -1,6 +1,21 @@
 from turing import TuringMachine, R, L, E, Behavior
 
 
+import sys
+import time
+
+# TBD - Move to static class utilities <<<
+def print_over(s, backup: bool = True, delay: float = 0.2) -> None:
+    if backup:
+        print('', end='\r')
+        print("\033[F" * (s.count('\n')+2))
+    print(s)
+    sys.stdout.flush()
+    time.sleep(delay)
+
+
+
+
 # ======== Some basic machine definitions
 
 
