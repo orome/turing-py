@@ -27,12 +27,11 @@ alternate_compact = {
 # Binary increment (https://turingmachine.io)
 increment = {
     'r':
-        {E: ([L], 'c'),
-         ('0', '1'): ([R], 'r')},
+        {E: ([L], 'c', "Scanning complete: backup and enter c"),
+         ('0', '1'): ([R], 'r', "Scan to the rightmost digit ...")},
     'c':
-        {E: (['1', L], 'd'),
-         '0': (['1', L], 'd'),
-         '1': (['0', L], 'c')}
+        {(E, '0'): (['1', L], 'd', "Done: complete carry and enter d"),
+         '1': (['0', L], 'c', "Carry ...")}
 }
 
 # Increasing runs of 1, with alternating blanks (Petzold p. 87, Turing p. 234)
@@ -70,6 +69,11 @@ print("\n-------- All (18) steps; tape")
 increment_machine = TuringMachine('r', increment, initial_tape="011111")
 for q in increment_machine.steps(18):
     print(q.str_tape())
+
+print("\n-------- Auto halt 500 steps; complete configuration, commented")
+increment_machine = TuringMachine('r', increment, initial_tape="101011")
+for q in increment_machine.steps(500, auto_halt=True):
+    print("\t\t".join([q.str_complete_configuration(), q.step_comment]))
 
 # TBD - Add support for moving left
 # increment_machine = TuringMachine('r', increment, initial_tape="111111")

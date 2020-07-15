@@ -32,6 +32,7 @@ CompleteConfig = List[Union[Symbol, MConfig]]    # TBD - Limit to one MConfig?
 class Behavior(NamedTuple):
     ops: List[Union[Step,Symbol]]
     final_m_config: MConfig
+    comment: str = ""
 
 
 # REV - Allow Behavior to be alternatily spefified as just a tuple
@@ -87,11 +88,13 @@ class TuringMachine(object):
         self._tape = self._dict_initial_tape.copy()
         self._m_configuration = self._initial_m_configuration
         self._position = self._initial_position
+        self._step_comment = "Initial configuration"
 
     def reset(self) -> None:
         self._tape = self._dict_initial_tape.copy()
         self._m_configuration = self._initial_m_configuration
         self._position = self._initial_position
+        self._step_comment = "Initial configuration"
 
     @property
     def tape(self) -> Tape:
@@ -100,7 +103,11 @@ class TuringMachine(object):
         for i in range(0, 1+max(self._position, max(self._tape.keys()))):
             list_tape.append(self._tape[i])
         return list_tape
-   
+
+    @property
+    def step_comment(self) -> str:
+        return self._step_comment
+
     def complete_configuration(self) -> CompleteConfig:
         list_tape = self.tape
         list_tape.insert(self._position, self._m_configuration)
@@ -130,6 +137,7 @@ class TuringMachine(object):
             else:
                 self._tape[self._position] = op
         self._m_configuration = behavior.final_m_config
+        self._step_comment = behavior.comment
 
     # Sequential states of the machine, starting with the current state and leaving the machine in the last state
     def steps(self, steps: int = None, include_current: bool = True, reset: bool = True, extend: bool = False,
