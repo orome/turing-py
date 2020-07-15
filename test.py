@@ -4,6 +4,7 @@ from turing import TuringMachine, R, L, E, Behavior
 import sys
 import time
 
+
 # TBD - Move to static class utilities <<<
 def print_over(s, backup: bool = True, delay: float = 0.2) -> None:
     if backup:
@@ -12,8 +13,6 @@ def print_over(s, backup: bool = True, delay: float = 0.2) -> None:
     print(s)
     sys.stdout.flush()
     time.sleep(delay)
-
-
 
 
 # ======== Some basic machine definitions
@@ -88,7 +87,7 @@ for q in increment_machine.steps(18):
 print("\n-------- Auto halt 500 steps; complete configuration, commented")
 increment_machine = TuringMachine('r', increment, initial_tape="101011")
 for q in increment_machine.steps(500, auto_halt=True):
-    print("\t\t".join([q.str_complete_configuration().ljust(8), q.step_comment]))
+    print("".join([q.str_complete_configuration().ljust(10), q.step_comment]))
 
 # TBD - Add support for moving left
 # increment_machine = TuringMachine('r', increment, initial_tape="111111")
@@ -167,63 +166,26 @@ print("\n-------- 40 steps with generator; complete config on two lines")
 for q in increasing_machine.steps(40):
     print(q.display_text())
 
-print("\n-------- 100 steps with generator; complete config on two lines")
-print("\n")
-for q in increasing_machine.steps(1000):
-    print_over(q.display_text(), backup=True, delay=0.02)
+# print("\n-------- 1000 steps with generator; complete config on two lines, overwrite")
+# print("\n")
+# for q in increasing_machine.steps(1000):
+#     print_over(q.display_text(), backup=True, delay=0.01)
 
 print("\n-------- Turing's compact complete configurations (Petzold p. 92, Turing p. 235)")
 print(':'.join([x.str_complete_configuration() for x in increasing_machine.steps(8)]))
 
 
+# -------- Debug
 
-# print("##############################################")
-
+# print("\n\n======== DEBUG")
 #
-# print("\n ----- Generator (reset)")
-# increasing_machine.reset()
-# for q in increasing_machine.steps(10):
-#     print(q.str_complete_configuration())
+# print("\n-------- Test bad m-configuration")
+# alternate_machine_compact = TuringMachine('Z', alternate_compact, initial_tape=E)
+# for q in alternate_machine_compact.steps(10, debug = True):
+#     print(q.complete_configuration())
 #
-# print("\n ----- Generator (continue)")
-# for q in increasing_machine.steps(10):
-#     print(q.str_complete_configuration())
-#
-# increasing_machine.reset()
-# configuration = []
-# for q in range(8):
-#     configuration.append(increasing_machine.str_complete_configuration())
-#     increasing_machine.step()
-# print(':'.join(configuration))
-#
-# print("\n ----- Generator")
-# for q in increasing_machine.steps(200, reset=True):
-#     print(q.str_tape())
-#
-
-
-# print("\n\nGenerator\n")
-# increasing_machine.reset()
-# print([x.tape for x in increasing_machine.steps(10)])
-
-# print(transitions['b'][' '])
-# print(transitions['f'][' '])
-#print(transitions['f'][1])
-
-
-# transitions = {
-#     # this state represents having read an even number of ones
-#     0: {
-#         '0': (0, '0', R),
-#         '1': (1, '1', R),
-#         '_': (-1, '_', L),
-#         },
-#     # this state represents having read an odd number of ones
-#     1: {
-#         '0': (1, '0', R),
-#         '1': (0, '1', R),
-#         '_': (-1, '_', R),
-#         }
-#     }
-
+# print("\n-------- Test bad symbol")
+# alternate_machine_compact = TuringMachine('b', alternate_compact, initial_tape="X")
+# for q in alternate_machine_compact.steps(10, debug = True):
+#     print(q.complete_configuration())
 
