@@ -68,7 +68,12 @@ _HIGHLIGHT_RESET = "\u001b[0m"
 # TBD - Graphic/matplotlib version of display_text
 # TBD - CLI
 # TBD - Skeleton tables
-# TBD - Square root of 2 program (and accuracy test)
+# TBD - Further examples
+#       Universal Turing Machine: https://link.springer.com/content/pdf/bbm%3A978-1-84882-555-0%2F1.pdf
+#      Square root of 2 program (and accuracy test) - https://www.math.utah.edu/~pa/math/q1.html
+# TBD - Add unit tests
+# TBD - Puzzle: find another member of the pattern Description number -> Output
+# TBD - Tables in standard form, then quintlples, then as standard descriptions (SD), and then as description number (DN)
 
 # TBD - Document behavior and transition format and argument requirements <<<
 
