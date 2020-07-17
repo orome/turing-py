@@ -50,6 +50,7 @@ L = Step.L
 R = Step.R
 N = Step.N
 
+# See for how these look on various platforms - https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit
 _HIGHLIGHT_SYMBOL = "\u001b[44m\u001b[37;1m"    # "\u001b[44m\u001b[36;1m"
 _HIGHLIGHT_M_CONFIG = "\u001b[44m\u001b[37;1m"  # "\u001b[43;1m\u001b[31;1m"
 _HIGHLIGHT_RESET = "\u001b[0m"
@@ -70,10 +71,14 @@ _HIGHLIGHT_RESET = "\u001b[0m"
 # TBD - Skeleton tables
 # TBD - Further examples
 #       Universal Turing Machine: https://link.springer.com/content/pdf/bbm%3A978-1-84882-555-0%2F1.pdf
-#      Square root of 2 program (and accuracy test) - https://www.math.utah.edu/~pa/math/q1.html
+#       Square root of 2 program (and accuracy test) - https://www.math.utah.edu/~pa/math/q1.html
 # TBD - Add unit tests
 # TBD - Puzzle: find another member of the pattern Description number -> Output
 # TBD - Tables in standard form, then quintlples, then as standard descriptions (SD), and then as description number (DN)
+# TBD - Export MMA format
+# TBD - Import / export turingmachine.io format
+# TBD - Transitions as property <<<
+
 
 # TBD - Document behavior and transition format and argument requirements <<<
 
