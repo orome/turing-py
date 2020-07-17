@@ -38,6 +38,18 @@ alternate_compact = {
          '1': ([R, R, '0'], 'b')}
 }
 
+# Alternating 1s and 0s with blanks, in standard form (Petzold p. 139, Turing p. 241))
+alternate_standard = {
+    'b':
+        {E: (['0', R], 'c')},
+    'c':
+        {E: ([E, R], 'e')},
+    'e':
+        {E: (['1', R], 'f')},
+    'f':
+        {E: ([E, R], 'b')}
+}
+
 # Binary increment (https://turingmachine.io)
 increment = {
     'r':
@@ -173,6 +185,14 @@ for q in increasing_machine.steps(40):
 
 print("\n-------- Turing's compact complete configurations (Petzold p. 92, Turing p. 235)")
 print(':'.join([x.str_complete_configuration() for x in increasing_machine.steps(8)]))
+
+
+# -------- Standard description (S.D.)
+
+print("\n\n======== SD for lternating 1s and 0s, with blanks")
+
+alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E)
+print(alternate_machine_standard.standard_description())
 
 
 # -------- Debug

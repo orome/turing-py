@@ -211,6 +211,29 @@ class TuringMachine(object):
             yield self
             step += 1
 
+    # Make function for symbol substitution; make transitions private property; tidy looping and names <<<
+    def standard_description(self) -> str:
+        # TBD - Validate in standard form or convert to standard form
+        m_config_indices = {}
+        symbol_inicies = {E: 0, '0': 1, '1': 2}
+        move_letter = {N: 'N', R: 'R', L: 'L'}
+        sd = []
+        for position, symbol in enumerate(self.transitions):
+            m_config_indices[symbol] = position + 1
+        for m_config_start in self.transitions.keys():
+            for scanned_symbol in self.transitions[m_config_start].keys():
+                behavior = Behavior(*self.transitions[m_config_start][scanned_symbol])
+                written_symbol = behavior.ops[0]
+                move = behavior.ops[1]
+                m_config_end = behavior.final_m_config
+                sd.append('D' + 'A' * m_config_indices[m_config_start] +
+                          'D' + 'C' * symbol_inicies[scanned_symbol] +
+                          'D' + 'C' * symbol_inicies[written_symbol] +
+                          move_letter[move] +
+                          'D' + 'A' * m_config_indices[m_config_end]
+                          )
+        return ';'.join(sd)
+
 
 # ======== Some errors
 
