@@ -187,12 +187,39 @@ print("\n-------- Turing's compact complete configurations (Petzold p. 92, Turin
 print(':'.join([x.str_complete_configuration() for x in increasing_machine.steps(8)]))
 
 
-# -------- Standard description (S.D.)
+# -------- Machine definition representations; SD, DN, etc.
 
-print("\n\n======== SD for lternating 1s and 0s, with blanks")
+print("\n\n======== Machine definition representations")
+
+print("\n--------- SD for alternating 1s and 0s, with blanks (Petzold p. 140, Turing p. 241)")
 
 alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E)
-print(alternate_machine_standard.standard_description())
+print(alternate_machine_standard.transitions('SD'))
+
+print("\n--------- DN for alternating 1s and 0s, with blanks (Petzold p. 140, Turing p. 241)")
+
+alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E)
+print(alternate_machine_standard.transitions('DN'))
+
+print("\n--------- Tuple standard form for alternating 1s and 0s, with blanks (Petzold p. 139, Turing p. 241)")
+
+alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E)
+print(alternate_machine_standard.transitions('tuples'))
+
+print("\n--------- List of standard form tuples for alternating 1s and 0s, with blanks")
+
+alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E)
+print(alternate_machine_standard.transitions('tuples', True))
+
+print("\n--------- YAML for alternating 1s and 0s, with blanks (for https://turingmachine.io)")
+
+alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E)
+print(alternate_machine_standard.transitions('YAML'))
+
+print("\n--------- Dictionary for alternating 1s and 0s, with blanks")
+
+alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E)
+print(alternate_machine_standard.transitions())
 
 
 # -------- Debug

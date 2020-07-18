@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import collections
 from typing import List, Dict, Union, Tuple, NamedTuple, Generator
-from enum import IntEnum
+from enum import IntEnum, Enum
 from copy import deepcopy
 from sys import exit
 
@@ -22,6 +22,33 @@ class Step(IntEnum):
     R = +1
     N = 0
 
+
+# TBD - Make Enum; what is pythonic way do to this so arguments can be the string values? <<<
+# class Representation(Enum):
+#     SD = 'SD'
+#     DN = 'DN'
+Representation =str
+
+FORMAT_CHARS = {
+    'SD':
+        {'m_config_base': 'D', 'm_config_index': lambda i: i*'A',
+         'symbol_base': 'D', 'symbol_index': lambda i: i*'C',
+         Step.N: 'N', Step.R: 'R', Step.L: 'L',
+         'seperator': ';'},
+    'DN':
+        {'m_config_base': '3', 'm_config_index': lambda i: i*'1',
+         'symbol_base': '3', 'symbol_index': lambda i: i*'2',
+         Step.N: '6', Step.R: '5', Step.L: '4',
+         'seperator': '7'},
+    'tuples':   # REV - Chage to 'tuple' ?
+        {'m_config_base': 'q', 'm_config_index': lambda i: str(i),
+         'symbol_base': 'S', 'symbol_index': lambda i: str(i),
+         Step.N: 'N', Step.R: 'R', Step.L: 'L',
+         'seperator': ';'},
+    'YAML':
+        {Step.R: 'R' ,Step.L: 'L', Step.N: 'N',
+         'seperator': '\n'}
+}
 
 # TBD - Improve format documentation
 # m-configs and symbols are one char (ints tolerated for symbols)
@@ -39,7 +66,8 @@ class Behavior(NamedTuple):
     comment: str = ""
 
 
-# REV - Allow Behavior to be alternatily spefified as just a tuple
+# REV - Allow Behavior to be alternately specified as just a tuple (coerced when used)
+# REV - Better name <<<
 Transitions = Dict[MConfig, Dict[Union[Symbol,Tuple[Symbol]], Union[Behavior,tuple]]]
 
 
@@ -67,18 +95,26 @@ _HIGHLIGHT_RESET = "\u001b[0m"
 # TBD - Expand display_text() with decoration, highlight, arguments, comment on additiona line, long state name, etc.
 # TBD - Pull highlightint out into seperate utility <<<
 # TBD - Graphic/matplotlib version of display_text
+# TBD - Reorganize tape as function like transitions, with various representations <<<
 # TBD - CLI
+# TBD - Add tabular formats for transisions <<<
+# TBD - Note where Turing conventions are assumed/enforced (eg one direction, single character symbols); opt disable
+# TBD - Force single character symbol. Allow multi character state, add display for multi character state
+# TBD - Warn in docs that multi character state may not work with some representations
 # TBD - Skeleton tables
 # TBD - Further examples
 #       Universal Turing Machine: https://link.springer.com/content/pdf/bbm%3A978-1-84882-555-0%2F1.pdf
 #       Square root of 2 program (and accuracy test) - https://www.math.utah.edu/~pa/math/q1.html
 # TBD - Add unit tests
 # TBD - Puzzle: find another member of the pattern Description number -> Output
-# TBD - Tables in standard form, then quintlples, then as standard descriptions (SD), and then as description number (DN)
+# TBD - Convert transitions to standard form
+# TBD - Save entire previous behavior (not just self._step_comment); use in new display (e.g. tuple for last used rule)
 # TBD - Export MMA format
 # TBD - Import / export turingmachine.io format
-# TBD - Transitions as property <<<
-
+# TBD - Allow providing transtions as DN or SD: generate transition dict from them
+# TBD - Support alternate names for the various representations (SD, DN, etc.)
+# TBD - Use representations (e.g. SD encoding) for tape and complete configurations as well
+# REV - Copy arguments provided as lists (e.g. symbol_ordering)
 
 # TBD - Document behavior and transition format and argument requirements <<<
 
@@ -89,6 +125,7 @@ class TuringMachine(object):
 
     def __init__(self, initial_m_configuration: MConfig, transitions: Transitions,
                  initial_tape: Union[Tape, str] = str(E), initial_position: int = 0,
+                 symbol_ordering: list = None, m_config_ordering: list = None,
                  *args, **kw):
 
         # Process alternate forms for arguments (tape a string, tuple for matched symbols with same behavior)
@@ -108,9 +145,17 @@ class TuringMachine(object):
         for position, symbol in enumerate(initial_tape):
             self._dict_initial_tape[position] = symbol
         self._initial_m_configuration = initial_m_configuration
-        self.transitions = deepcopy(processed_transitions)
+        # REV - Copy necessary?
+        self._transitions = deepcopy(processed_transitions)
         # TBD - Add ability to set other than defaults with optional arguments
         self._initial_position = initial_position
+
+        # Ordering of symbols for various representations (e.g. S.D.)
+        # Default config ordering is ordering of m-configurations in transitions
+        if symbol_ordering is None:
+            self._symbol_ordering = [E, '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+        if m_config_ordering is None:
+            self._m_config_ordering = self._transitions.keys()
 
         # TBD - Way to not have to repeat this (and avoid errors about setting outside of __init__?
         #self.reset()
@@ -161,17 +206,17 @@ class TuringMachine(object):
         # Providing a simple tuple is allowed; force to Behavior
         # REV - Remove if Behavior is strictly required
         try:
-            behavior = Behavior(*self.transitions[self._m_configuration][self._tape[self._position]])
+            behavior = Behavior(*self._transitions[self._m_configuration][self._tape[self._position]])
         # REV - Better way of detecting missing behavior for current m_config or current symbol
         except KeyError:
             if debug:
                 # If debugging, treat absense of a behavior for the current configuration as an error
                 try:
-                    self.transitions[self._m_configuration]
+                    self._transitions[self._m_configuration]
                 except KeyError:
                     raise UnknownMConfig(self._m_configuration)
                 try:
-                    self.transitions[self._m_configuration][self._tape[self._position]]
+                    self._transitions[self._m_configuration][self._tape[self._position]]
                 except KeyError:
                     raise UnknownSymbol(self._tape[self._position])
             else:
@@ -211,28 +256,70 @@ class TuringMachine(object):
             yield self
             step += 1
 
-    # Make function for symbol substitution; make transitions private property; tidy looping and names <<<
-    def standard_description(self) -> str:
-        # TBD - Validate in standard form or convert to standard form
-        m_config_indices = {}
-        symbol_inicies = {E: 0, '0': 1, '1': 2}
-        move_letter = {N: 'N', R: 'R', L: 'L'}
-        sd = []
-        for position, symbol in enumerate(self.transitions):
-            m_config_indices[symbol] = position + 1
-        for m_config_start in self.transitions.keys():
-            for scanned_symbol in self.transitions[m_config_start].keys():
-                behavior = Behavior(*self.transitions[m_config_start][scanned_symbol])
-                written_symbol = behavior.ops[0]
-                move = behavior.ops[1]
-                m_config_end = behavior.final_m_config
-                sd.append('D' + 'A' * m_config_indices[m_config_start] +
-                          'D' + 'C' * symbol_inicies[scanned_symbol] +
-                          'D' + 'C' * symbol_inicies[written_symbol] +
-                          move_letter[move] +
-                          'D' + 'A' * m_config_indices[m_config_end]
-                          )
-        return ';'.join(sd)
+    def _format_m_configuration(self, m_config: MConfig, representation: Representation) -> str:
+        # m_config_indices = {}
+        # for pos, m_cfg in enumerate(self._m_config_ordering):
+        #     m_config_indices[m_cfg] = pos + 1
+        m_config_indices = {m_cfg: pos+1 for pos, m_cfg in enumerate(self._m_config_ordering)}
+        return FORMAT_CHARS[representation]['m_config_base'] + \
+               FORMAT_CHARS[representation]['m_config_index'](m_config_indices[m_config])
+
+    def _format_symbol(self, symbol: Symbol, representation: Representation) -> str:
+        # symbol_indicies = {}
+        # for pos, sym in enumerate(self._symbol_ordering):
+        #     symbol_indicies[sym] = pos
+        symbol_indicies = {sym:pos for pos, sym in enumerate(self._symbol_ordering)}
+        return FORMAT_CHARS[representation]['symbol_base'] + \
+               FORMAT_CHARS[representation]['symbol_index'](symbol_indicies[symbol])
+
+    def _format_move(self, move: Step, representation: Representation) -> str:
+        return FORMAT_CHARS[representation][move]
+
+    def _format_seperator(self, representation: Representation) -> str:
+        return FORMAT_CHARS[representation]['seperator']
+
+    # TBD -- Tidy looping and names <<<
+    # REV - Assumes transitions are in standard form
+    def _transitions_list(self, representation: Representation = None) -> list:
+        transition_representations = []
+        if representation in ['SD', 'DN', 'tuples']:
+            for m_config_start in self._transitions.keys():
+                for scanned_symbol in self._transitions[m_config_start].keys():
+                    behavior = Behavior(*self._transitions[m_config_start][scanned_symbol])
+                    written_symbol = behavior.ops[0]
+                    move = behavior.ops[1]
+                    m_config_end = behavior.final_m_config
+                    transition_representations.append(self._format_m_configuration(m_config_start, representation) +
+                                                      self._format_symbol(scanned_symbol, representation) +
+                                                      self._format_symbol(written_symbol, representation) +
+                                                      self._format_move(move, representation) +
+                                                      self._format_m_configuration(m_config_end, representation))
+        # BUG - Use on https://turingmachine.io fails - https://github.com/aepsilon/turing-machine-viz/issues/6
+        elif representation in ['YAML']:
+            transition_representations.append('table:')
+            for m_config_start in self._transitions.keys():
+                transition_representations.append('\t{0}:'.format(m_config_start))
+                for scanned_symbol in self._transitions[m_config_start].keys():
+                    behavior = Behavior(*self._transitions[m_config_start][scanned_symbol])
+                    written_symbol = behavior.ops[0]
+                    move = behavior.ops[1]
+                    m_config_end = behavior.final_m_config
+                    transition_representations.append("\t\t\'{0}\': {{write: \'{1}\', {2}: {3}}}".format(
+                        scanned_symbol,
+                        written_symbol,
+                        self._format_move(move, representation),
+                        m_config_end))
+        return transition_representations
+
+    def transitions(self, representation: Representation = None, as_list: bool = False) -> Union[Transitions, list, str]:
+        if representation in ['SD', 'DN', 'tuples', 'YAML']:
+            # TBD - Coerce to standard representation names before calling _transitions_list
+            if not as_list:
+                return self._format_seperator(representation).join(self._transitions_list(representation) + [''])
+            else:
+                return self._transitions_list(representation)
+        else:
+            return deepcopy(self._transitions)
 
 
 # ======== Some errors
