@@ -27,7 +27,7 @@ class Step(IntEnum):
 # class Representation(Enum):
 #     SD = 'SD'
 #     DN = 'DN'
-Representation =str
+Representation = str
 
 FORMAT_CHARS = {
     'SD':
@@ -46,7 +46,7 @@ FORMAT_CHARS = {
          Step.N: 'N', Step.R: 'R', Step.L: 'L',
          'seperator': ';'},
     'YAML':
-        {Step.R: 'R' ,Step.L: 'L', Step.N: 'N',
+        {Step.R: 'R',Step.L: 'L', Step.N: 'N',
          'seperator': '\n'}
 }
 
@@ -73,6 +73,7 @@ Transitions = Dict[MConfig, Dict[Union[Symbol,Tuple[Symbol]], Union[Behavior,tup
 
 # TBD - Way to override <<<
 E = ' ' # E for "empty"
+F_SYMBOLS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
 L = Step.L
 R = Step.R
@@ -84,6 +85,8 @@ _HIGHLIGHT_M_CONFIG = "\u001b[44m\u001b[37;1m"  # "\u001b[43;1m\u001b[31;1m"
 _HIGHLIGHT_RESET = "\u001b[0m"
 
 
+# !!! - Definition of alternating machine puts a step where a symbol should be (or vice versa) <<<<
+# TBD - Catch places where standard form is required; test reording with machine in standard form <<<
 # TBD - Grow left
 # TBD - Validaton of arguments and rules
 # TBD - Check single character symbols and m_configurations for presentations that assume it
@@ -113,6 +116,8 @@ _HIGHLIGHT_RESET = "\u001b[0m"
 # TBD - Import / export turingmachine.io format
 # TBD - Allow providing transtions as DN or SD: generate transition dict from them
 # TBD - Support alternate names for the various representations (SD, DN, etc.)
+# TBD - Force ints to chrs in creating processed transitions
+# REV - Determine form of transitions (e.g. standard vs non standard) in constructior and store; remove check from transitions
 # TBD - Use representations (e.g. SD encoding) for tape and complete configurations as well
 # REV - Copy arguments provided as lists (e.g. symbol_ordering)
 
@@ -124,17 +129,33 @@ _HIGHLIGHT_RESET = "\u001b[0m"
 class TuringMachine(object):
 
     def __init__(self, initial_m_configuration: MConfig, transitions: Transitions,
-                 initial_tape: Union[Tape, str] = str(E), initial_position: int = 0,
-                 symbol_ordering: list = None, m_config_ordering: list = None,
+                 initial_tape: Union[Tape, str] = E, initial_position: int = 0,
+                 e_symbol_ordering: list = None, m_config_ordering: list = None,
                  *args, **kw):
 
         # Process alternate forms for arguments (tape a string, tuple for matched symbols with same behavior)
         # REV - Lots of deepcopy which may not be needed
         if isinstance(initial_tape, str):
             initial_tape = list(initial_tape)
+
+        symbols_from_transitions = set(initial_tape + [E])
+        # List of m-configs captured from transitions, in order of rules, and then as additional final states found
+        m_configs_from_transitons = list(transitions.keys())
+
         processed_transitions = deepcopy(transitions)
         for m_config in transitions.keys():
             for syms in transitions[m_config].keys():
+                # Collect all symbols and m-configurations used mentioned in transitions
+                for sym in tuple(syms):
+                    symbols_from_transitions.add(sym)
+                for op in transitions[m_config][syms][0]:
+                    if not isinstance(op, Step):
+                        symbols_from_transitions.add(op)
+                final_m_config = transitions[m_config][syms][1]
+                if final_m_config not in m_configs_from_transitons:
+                    # Order encountered matters for convention, so append rather than add
+                    m_configs_from_transitons.append(final_m_config)
+                # Where multiple read symbols are listed, replace with one rule for each, for ease of later indexing
                 if isinstance(syms, tuple):
                     for sym in syms:
                         processed_transitions[m_config][sym] = transitions[m_config][syms]
@@ -151,11 +172,21 @@ class TuringMachine(object):
         self._initial_position = initial_position
 
         # Ordering of symbols for various representations (e.g. S.D.)
-        # Default config ordering is ordering of m-configurations in transitions
-        if symbol_ordering is None:
-            self._symbol_ordering = [E, '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+        if e_symbol_ordering is None:
+            # Default symbol ordering is sorted
+            self._symbol_ordering = sorted(list(symbols_from_transitions))
+        else:
+            # If E-symbol ordering is specified ordering is blank, sorted F-symbols, provided E-symbol ordering
+            self._symbol_ordering = [E] + sorted(filter(lambda s: s in F_SYMBOLS, symbols_from_transitions)) + e_symbol_ordering.copy()
+        assert sorted(self._symbol_ordering) == sorted(symbols_from_transitions), "Ordering of symbols is incomplete"
+
         if m_config_ordering is None:
-            self._m_config_ordering = self._transitions.keys()
+            # Default m-configuration ordering is as encountered in provided transitions
+            self._m_config_ordering = m_configs_from_transitons
+        else:
+            # If m-config ordering is specified, that is used
+            self._m_config_ordering = m_config_ordering.copy()
+        assert sorted(self._m_config_ordering) == sorted(m_configs_from_transitons), "Ordering of m-configs is incomplete"
 
         # TBD - Way to not have to repeat this (and avoid errors about setting outside of __init__?
         #self.reset()
@@ -268,6 +299,7 @@ class TuringMachine(object):
         # symbol_indicies = {}
         # for pos, sym in enumerate(self._symbol_ordering):
         #     symbol_indicies[sym] = pos
+        assert not isinstance(symbol, Step)
         symbol_indicies = {sym:pos for pos, sym in enumerate(self._symbol_ordering)}
         return FORMAT_CHARS[representation]['symbol_base'] + \
                FORMAT_CHARS[representation]['symbol_index'](symbol_indicies[symbol])
@@ -314,6 +346,12 @@ class TuringMachine(object):
     def transitions(self, representation: Representation = None, as_list: bool = False) -> Union[Transitions, list, str]:
         if representation in ['SD', 'DN', 'tuples', 'YAML']:
             # TBD - Coerce to standard representation names before calling _transitions_list
+            # REV - Use and over comprehension?
+            for m_config in self._transitions.keys():
+                for sym in self._transitions[m_config].keys():
+                    ops = Behavior(*self._transitions[m_config][sym]).ops
+                    if not(len(ops) == 2 and not isinstance(ops[0], Step) and isinstance(ops[1], Step)):
+                        raise NonStandardConfiguration(requirement="To represent as {}, transitions must be in standard form".format(representation))
             if not as_list:
                 return self._format_seperator(representation).join(self._transitions_list(representation) + [''])
             else:
@@ -325,8 +363,9 @@ class TuringMachine(object):
 # ======== Some errors
 
 class TuringError(Exception):
-    def __init__(self, bad_token: chr = '') -> None:
+    def __init__(self, bad_token: chr = '', requirement: str = '') -> None:
         self.bad_token = bad_token
+        self.requirement = requirement
 
 
 class UnknownSymbol(TuringError):
@@ -347,4 +386,11 @@ class BadToken(TuringError):
     """An m-confugration or symbol is not a single character or string of length 1."""
 
     def __str__(self) -> str:
-        return str('Invalid toekn: {0}'.format(self.bad_token))
+        return str('Invalid token: {0}'.format(self.bad_token))
+
+
+class NonStandardConfiguration(TuringError):
+    """An encountered machnine specification is not present in full standard form (where requried."""
+
+    def __str__(self) -> str:
+        return str('Machine specification not in standard form: {0}'.format(self.requirement))
