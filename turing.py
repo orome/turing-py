@@ -35,21 +35,21 @@ FORMAT_CHARS = {
         {'symbol_format_fn': lambda i: 'D' + i*'C',
          'm_config_format_fn': lambda i: 'D' + (i + 1)*'A',
          'step_format_fn': lambda i: {Step.N: 'N', Step.R: 'R', Step.L: 'L'}[i],
-         'seperator': ';', 'table_begin': '', 'table_end': ''},
+         'seperator': '', 'table_begin': '', 'table_end': ''},
     'DN':
         {'symbol_format_fn': lambda i: '3' + i * '2',
          'm_config_format_fn': lambda i: '3' + (i + 1) * '1',
          'step_format_fn': lambda i: {Step.N: '6', Step.R: '5', Step.L: '4'}[i],
-         'seperator': '7', 'table_begin': '', 'table_end': ''},
+         'seperator': '', 'table_begin': '', 'table_end': ''},
     'tuples':   # REV - Chage to 'tuple' ?
         {'symbol_format_fn': lambda i: 'S' + str(i),
          'm_config_format_fn': lambda i: 'q' + str(i + 1),
          'step_format_fn': lambda i: {Step.N: 'N', Step.R: 'R', Step.L: 'L'}[i],
-         'seperator': ';', 'table_begin': '', 'table_end': ''},
+         'seperator': '', 'table_begin': '', 'table_end': ''},
     'wolfram':
         {'symbol_format_fn': lambda i: str(i),
          'm_config_format_fn': lambda i: str(i + 1),
-         'step_format_fn': lambda i: {Step.N: 0, Step.R: 1, Step.L: -1}[i],
+         'step_format_fn': lambda i: i,
          'seperator': ', ', 'table_begin': '{ ', 'table_end': ' }'},
     'YAML':
         {'step_format_fn': lambda i: {Step.N: 'N', Step.R: 'R', Step.L: 'L'}[i],
@@ -57,9 +57,9 @@ FORMAT_CHARS = {
 }
 
 FORMAT_TRANSITION = {
-    'SD': "{fmt_m_config_start}{fmt_scanned_symbol}{fmt_written_symbol}{fmt_move}{fmt_m_config_end}",
-    'DN': "{fmt_m_config_start}{fmt_scanned_symbol}{fmt_written_symbol}{fmt_move}{fmt_m_config_end}",
-    'tuples':"{fmt_m_config_start}{fmt_scanned_symbol}{fmt_written_symbol}{fmt_move}{fmt_m_config_end}",
+    'SD': "{fmt_m_config_start}{fmt_scanned_symbol}{fmt_written_symbol}{fmt_move}{fmt_m_config_end};",
+    'DN': "{fmt_m_config_start}{fmt_scanned_symbol}{fmt_written_symbol}{fmt_move}{fmt_m_config_end}7",
+    'tuples':"{fmt_m_config_start}{fmt_scanned_symbol}{fmt_written_symbol}{fmt_move}{fmt_m_config_end};",
     'wolfram': "{{{fmt_m_config_start},  {fmt_scanned_symbol}}} ->  {{{fmt_m_config_end},  {fmt_written_symbol}, {fmt_move}}}"
 }
 
@@ -168,26 +168,29 @@ class TuringMachine(object):
 
         # Go through the transitions and find symbols and m_configs, reorganize to have one symbol match per rule,
         # Determine if the result is in standard form
+        # Also make sure every behavior is a Behavior
         processed_transitions = deepcopy(transitions)
         for m_config in transitions.keys():
             for syms in transitions[m_config].keys():
                 # Collect all symbols and m-configurations used mentioned in transitions
                 for sym in tuple(syms):
                     symbols_from_transitions.add(sym)
-                ops = transitions[m_config][syms][0]
+                behavior = Behavior(*transitions[m_config][syms])
+                processed_transitions[m_config][syms] = behavior
+                ops = behavior.ops
                 self._is_standard_form = (self._is_standard_form and len(ops) == 2 and
                                           not isinstance(ops[0], Step) and isinstance(ops[1], Step))
-                for op in transitions[m_config][syms][0]:
+                for op in ops:
                     if not isinstance(op, Step):
                         symbols_from_transitions.add(op)
-                final_m_config = transitions[m_config][syms][1]
+                final_m_config = behavior.final_m_config
                 if final_m_config not in m_configs_from_transitons:
                     # Order encountered matters for convention, so append rather than add
                     m_configs_from_transitons.append(final_m_config)
                 # Where multiple read symbols are listed, replace with one rule for each, for ease of later indexing
                 if isinstance(syms, tuple):
                     for sym in syms:
-                        processed_transitions[m_config][sym] = transitions[m_config][syms]
+                        processed_transitions[m_config][sym] = Behavior(*behavior)
                     del(processed_transitions[m_config][syms])
 
         # Add any missing no-op rules (e.g. required for valid Wolfram TuringMachine
@@ -270,10 +273,9 @@ class TuringMachine(object):
         return ''.join(tape) + '\n' + ''.join(annotation)
 
     def step(self, debug: bool = False) -> None:
-        # Providing a simple tuple is allowed; force to Behavior
-        # REV - Remove if Behavior is strictly required
         try:
-            behavior = Behavior(*self._transitions[self._m_configuration][self._tape[self._position]])
+            #behavior = Behavior(*self._transitions[self._m_configuration][self._tape[self._position]])
+            behavior = self._transitions[self._m_configuration][self._tape[self._position]]
         # REV - Better way of detecting missing behavior for current m_config or current symbol
         except KeyError:
             if debug:
@@ -361,7 +363,8 @@ class TuringMachine(object):
             assert self._is_standard_form
             for m_config_start in self._transitions.keys():
                 for scanned_symbol in self._transitions[m_config_start].keys():
-                    behavior = Behavior(*self._transitions[m_config_start][scanned_symbol])
+                    #behavior = Behavior(*self._transitions[m_config_start][scanned_symbol])
+                    behavior = self._transitions[m_config_start][scanned_symbol]
                     written_symbol = behavior.ops[0]
                     move = behavior.ops[1]
                     m_config_end = behavior.final_m_config
@@ -377,7 +380,8 @@ class TuringMachine(object):
             for m_config_start in self._transitions.keys():
                 transition_representations.append('\t{0}:'.format(m_config_start))
                 for scanned_symbol in self._transitions[m_config_start].keys():
-                    behavior = Behavior(*self._transitions[m_config_start][scanned_symbol])
+                    #behavior = Behavior(*self._transitions[m_config_start][scanned_symbol])
+                    behavior = self._transitions[m_config_start][scanned_symbol]
                     written_symbol = behavior.ops[0]
                     move = behavior.ops[1]
                     m_config_end = behavior.final_m_config
@@ -395,7 +399,7 @@ class TuringMachine(object):
                     requirement="To represent as {}, transitions must be in standard form".format(representation))
             if not as_list:
                 return FORMAT_CHARS[representation]['table_begin'] + \
-                       self._format_seperator(representation).join(self._transitions_list(representation) + ['']) +\
+                       self._format_seperator(representation).join(self._transitions_list(representation)) +\
                        FORMAT_CHARS[representation]['table_end']
 
             else:
@@ -434,7 +438,7 @@ class BadToken(TuringError):
 
 
 class NonStandardConfiguration(TuringError):
-    """An encountered machnine specification is not present in full standard form (where requried."""
+    """An encountered machine specification is not present in full standard form (where requried."""
 
     def __str__(self) -> str:
         return str('Machine specification not in standard form: {0}'.format(self.requirement))
