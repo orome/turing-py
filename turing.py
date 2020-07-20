@@ -60,12 +60,19 @@ Tape = List[Symbol]
 CompleteConfig = List[Union[Symbol, MConfig]]    # TBD - Limit to one MConfig?
 
 
+# If the from of ops is [Symbol, Step] then the Behavior is in standard form.
 class Behavior(NamedTuple):
     ops: List[Union[Step,Symbol]]
     final_m_config: MConfig
     comment: str = ""
 
 
+# Transitions are dictionaries of the form
+#   {start_m_config: {matched_character_1: behavior_1, ...}}
+# where for convenience, matched_character_1 can be a tuple of matched characters, and the behaviors may be provided
+# as tuples rather than Behaviors.
+# Where tuples of matched characters are provided, these will be replaced with one entry of the form above for each
+# character in the tuple. If all provided behaviors are in standard form, then self._is_standard_form == True.
 # REV - Allow Behavior to be alternately specified as just a tuple (coerced when used)
 # REV - Better name <<<
 Transitions = Dict[MConfig, Dict[Union[Symbol,Tuple[Symbol]], Union[Behavior,tuple]]]
