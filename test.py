@@ -1,4 +1,4 @@
-from turing import TuringMachine, R, L, E, Behavior
+from turing import TuringMachine, R, L, N, E, Behavior
 
 
 import sys
@@ -210,6 +210,11 @@ print("\n--------- List of standard form tuples for alternating 1s and 0s, with 
 
 alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E)
 print(alternate_machine_standard.transitions('tuples', True))
+
+print("\n--------- Wolfram TuringMachine rules for alternating 1s and 0s, with blanks")
+
+alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E, add_no_op_transitions=True)
+print(alternate_machine_standard.transitions('wolfram'))
 
 print("\n--------- YAML for alternating 1s and 0s, with blanks (for https://turingmachine.io)")
 
