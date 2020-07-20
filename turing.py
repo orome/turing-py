@@ -29,30 +29,31 @@ class Step(IntEnum):
 #     DN = 'DN'
 Representation = str
 
+# TBD - Rename <<<
 FORMAT_CHARS = {
     'SD':
         {'symbol_format_fn': lambda i: 'D' + i*'C',
-         'm_config_format_fn': lambda i: 'D' + (i+1)*'A',
+         'm_config_format_fn': lambda i: 'D' + (i + 1)*'A',
          'step_format_fn': lambda i: {Step.N: 'N', Step.R: 'R', Step.L: 'L'}[i],
-         'seperator': ';'},
+         'seperator': ';', 'table_begin': '', 'table_end': ''},
     'DN':
         {'symbol_format_fn': lambda i: '3' + i * '2',
          'm_config_format_fn': lambda i: '3' + (i + 1) * '1',
          'step_format_fn': lambda i: {Step.N: '6', Step.R: '5', Step.L: '4'}[i],
-         'seperator': '7'},
+         'seperator': '7', 'table_begin': '', 'table_end': ''},
     'tuples':   # REV - Chage to 'tuple' ?
         {'symbol_format_fn': lambda i: 'S' + str(i),
          'm_config_format_fn': lambda i: 'q' + str(i + 1),
          'step_format_fn': lambda i: {Step.N: 'N', Step.R: 'R', Step.L: 'L'}[i],
-         'seperator': ';'},
-    # 'wolfram':
-    #     {'m_config_base': '', 'm_config_index': lambda i: str(i),
-    #      'symbol_base': '', 'symbol_index': lambda i: str(i),
-    #      Step.N: 0, Step.R: 1, Step.L: -1,
-    #      'seperator': ', '},
+         'seperator': ';', 'table_begin': '', 'table_end': ''},
+    'wolfram':
+        {'symbol_format_fn': lambda i: str(i),
+         'm_config_format_fn': lambda i: str(i + 1),
+         'step_format_fn': lambda i: {Step.N: 0, Step.R: 1, Step.L: -1}[i],
+         'seperator': ', ', 'table_begin': '{ ', 'table_end': ' }'},
     'YAML':
         {'step_format_fn': lambda i: {Step.N: 'N', Step.R: 'R', Step.L: 'L'}[i],
-         'seperator': '\n'}
+         'seperator': '\n', 'table_begin': '', 'table_end': ''}
 }
 
 FORMAT_TRANSITION = {
@@ -152,6 +153,7 @@ class TuringMachine(object):
     def __init__(self, initial_m_configuration: MConfig, transitions: Transitions,
                  initial_tape: Union[Tape, str] = E, initial_position: int = 0,
                  e_symbol_ordering: list = None, m_config_ordering: list = None,
+                 add_no_op_transitions: bool = False,
                  *args, **kw):
 
         # Process alternate forms for arguments (tape a string, tuple for matched symbols with same behavior)
@@ -392,7 +394,10 @@ class TuringMachine(object):
                 raise NonStandardConfiguration(
                     requirement="To represent as {}, transitions must be in standard form".format(representation))
             if not as_list:
-                return self._format_seperator(representation).join(self._transitions_list(representation) + [''])
+                return FORMAT_CHARS[representation]['table_begin'] + \
+                       self._format_seperator(representation).join(self._transitions_list(representation) + ['']) +\
+                       FORMAT_CHARS[representation]['table_end']
+
             else:
                 return self._transitions_list(representation)
         else:
