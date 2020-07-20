@@ -31,24 +31,37 @@ Representation = str
 
 FORMAT_CHARS = {
     'SD':
-        {'m_config_base': 'D', 'm_config_index': lambda i: i*'A',
-         'symbol_base': 'D', 'symbol_index': lambda i: i*'C',
-         Step.N: 'N', Step.R: 'R', Step.L: 'L',
+        {'symbol_format_fn': lambda i: 'D' + i*'C',
+         'm_config_format_fn': lambda i: 'D' + (i+1)*'A',
+         'step_format_fn': lambda i: {Step.N: 'N', Step.R: 'R', Step.L: 'L'}[i],
          'seperator': ';'},
     'DN':
-        {'m_config_base': '3', 'm_config_index': lambda i: i*'1',
-         'symbol_base': '3', 'symbol_index': lambda i: i*'2',
-         Step.N: '6', Step.R: '5', Step.L: '4',
+        {'symbol_format_fn': lambda i: '3' + i * '2',
+         'm_config_format_fn': lambda i: '3' + (i + 1) * '1',
+         'step_format_fn': lambda i: {Step.N: '6', Step.R: '5', Step.L: '4'}[i],
          'seperator': '7'},
     'tuples':   # REV - Chage to 'tuple' ?
-        {'m_config_base': 'q', 'm_config_index': lambda i: str(i),
-         'symbol_base': 'S', 'symbol_index': lambda i: str(i),
-         Step.N: 'N', Step.R: 'R', Step.L: 'L',
+        {'symbol_format_fn': lambda i: 'S' + str(i),
+         'm_config_format_fn': lambda i: 'q' + str(i + 1),
+         'step_format_fn': lambda i: {Step.N: 'N', Step.R: 'R', Step.L: 'L'}[i],
          'seperator': ';'},
+    # 'wolfram':
+    #     {'m_config_base': '', 'm_config_index': lambda i: str(i),
+    #      'symbol_base': '', 'symbol_index': lambda i: str(i),
+    #      Step.N: 0, Step.R: 1, Step.L: -1,
+    #      'seperator': ', '},
     'YAML':
-        {Step.R: 'R',Step.L: 'L', Step.N: 'N',
+        {'step_format_fn': lambda i: {Step.N: 'N', Step.R: 'R', Step.L: 'L'}[i],
          'seperator': '\n'}
 }
+
+FORMAT_TRANSITION = {
+    'SD': "{fmt_m_config_start}{fmt_scanned_symbol}{fmt_written_symbol}{fmt_move}{fmt_m_config_end}",
+    'DN': "{fmt_m_config_start}{fmt_scanned_symbol}{fmt_written_symbol}{fmt_move}{fmt_m_config_end}",
+    'tuples':"{fmt_m_config_start}{fmt_scanned_symbol}{fmt_written_symbol}{fmt_move}{fmt_m_config_end}",
+    'wolfram': "{{{fmt_m_config_start},  {fmt_scanned_symbol}}} ->  {{{fmt_m_config_end},  {fmt_written_symbol}, {fmt_move}}}"
+}
+
 
 # TBD - Improve format documentation
 # m-configs and symbols are one char (ints tolerated for symbols)
@@ -116,10 +129,12 @@ _HIGHLIGHT_RESET = "\u001b[0m"
 #       Universal Turing Machine: https://link.springer.com/content/pdf/bbm%3A978-1-84882-555-0%2F1.pdf
 #       Square root of 2 program (and accuracy test) - https://www.math.utah.edu/~pa/math/q1.html
 # TBD - Add unit tests
+# TBD - Redo formatting for symbols, etc, to be more genaral <<<
 # TBD - Puzzle: find another member of the pattern Description number -> Output
 # TBD - Convert transitions to standard form
 # TBD - Save entire previous behavior (not just self._step_comment); use in new display (e.g. tuple for last used rule)
 # TBD - Export MMA format
+# TBD - Change handling of YAML to generalte JSON (listable) and then convert to YAML for non list output
 # TBD - Import / export turingmachine.io format
 # TBD - Allow providing transtions as DN or SD: generate transition dict from them
 # TBD - Support alternate names for the various representations (SD, DN, etc.)
@@ -301,30 +316,39 @@ class TuringMachine(object):
 
     def _format_m_configuration(self, m_config: MConfig, representation: Representation) -> str:
         assert m_config in self._m_config_ordering
-        m_config_indices = {m_cfg: pos+1 for pos, m_cfg in enumerate(self._m_config_ordering)}
-        return FORMAT_CHARS[representation]['m_config_base'] + \
-               FORMAT_CHARS[representation]['m_config_index'](m_config_indices[m_config])
+        m_config_indices = {m_cfg: pos for pos, m_cfg in enumerate(self._m_config_ordering)}
+        return FORMAT_CHARS[representation]['m_config_format_fn'](m_config_indices[m_config])
 
     def _format_symbol(self, symbol: Symbol, representation: Representation) -> str:
-        # symbol_indicies = {}
-        # for pos, sym in enumerate(self._symbol_ordering):
-        #     symbol_indicies[sym] = pos
         assert not isinstance(symbol, Step) and symbol in self._symbol_ordering
         symbol_indicies = {sym:pos for pos, sym in enumerate(self._symbol_ordering)}
-        return FORMAT_CHARS[representation]['symbol_base'] + \
-               FORMAT_CHARS[representation]['symbol_index'](symbol_indicies[symbol])
+        return FORMAT_CHARS[representation]['symbol_format_fn'](symbol_indicies[symbol])
 
     def _format_move(self, move: Step, representation: Representation) -> str:
         assert isinstance(move, Step)
-        return FORMAT_CHARS[representation][move]
+        return FORMAT_CHARS[representation]['step_format_fn'](move)
 
     def _format_seperator(self, representation: Representation) -> str:
         return FORMAT_CHARS[representation]['seperator']
 
+    def _format_transition(self, representation: Representation,
+                           m_config_start: MConfig, m_config_end: MConfig,
+                           scanned_symbol: Symbol, written_symbol: Symbol,
+                           move: Step
+                           ) -> str:
+        fmt_elements = {
+            'fmt_m_config_start': self._format_m_configuration(m_config_start, representation),
+            'fmt_m_config_end': self._format_m_configuration(m_config_end, representation),
+            'fmt_scanned_symbol': self._format_symbol(scanned_symbol, representation),
+            'fmt_written_symbol': self._format_symbol(written_symbol, representation),
+            'fmt_move': self._format_move(move, representation),
+        }
+        return format(FORMAT_TRANSITION[representation].format(**fmt_elements))
+
     # TBD -- Tidy looping and names <<<
     def _transitions_list(self, representation: Representation = None) -> list:
         transition_representations = []
-        if representation in ['SD', 'DN', 'tuples']:
+        if representation in ['SD', 'DN', 'tuples', 'wolfram']:
             assert self._is_standard_form
             for m_config_start in self._transitions.keys():
                 for scanned_symbol in self._transitions[m_config_start].keys():
@@ -332,12 +356,12 @@ class TuringMachine(object):
                     written_symbol = behavior.ops[0]
                     move = behavior.ops[1]
                     m_config_end = behavior.final_m_config
-                    transition_representations.append(self._format_m_configuration(m_config_start, representation) +
-                                                      self._format_symbol(scanned_symbol, representation) +
-                                                      self._format_symbol(written_symbol, representation) +
-                                                      self._format_move(move, representation) +
-                                                      self._format_m_configuration(m_config_end, representation))
+                    transition_representations.append(self._format_transition(representation,
+                                                                              m_config_start, m_config_end,
+                                                                              scanned_symbol, written_symbol,
+                                                                              move))
         # BUG - Use on https://turingmachine.io fails - https://github.com/aepsilon/turing-machine-viz/issues/6
+        # REV - This isn't really a list of representations; allow as list at all (move to transitions?) <<<
         elif representation in ['YAML']:
             assert self._is_standard_form
             transition_representations.append('table:')
@@ -356,7 +380,7 @@ class TuringMachine(object):
         return transition_representations
 
     def transitions(self, representation: Representation = None, as_list: bool = False) -> Union[Transitions, list, str]:
-        if representation in ['SD', 'DN', 'tuples', 'YAML']:
+        if representation in ['SD', 'DN', 'tuples', 'YAML', 'wolfram']:
             if not self._is_standard_form:
                 raise NonStandardConfiguration(
                     requirement="To represent as {}, transitions must be in standard form".format(representation))
