@@ -188,6 +188,13 @@ class TuringMachine(object):
                         processed_transitions[m_config][sym] = transitions[m_config][syms]
                     del(processed_transitions[m_config][syms])
 
+        # Add any missing no-op rules (e.g. required for valid Wolfram TuringMachine
+        if add_no_op_transitions:
+            for m_config in processed_transitions.keys():
+                for sym in symbols_from_transitions:
+                    if sym not in processed_transitions[m_config].keys():
+                        processed_transitions[m_config][sym] = Behavior([sym, N], m_config)
+
         # Store the Tape internally as a dict
         self._dict_initial_tape = collections.defaultdict(lambda : E)
         for position, symbol in enumerate(initial_tape):
