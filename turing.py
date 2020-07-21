@@ -372,20 +372,20 @@ class TuringMachine(object):
                                                                               m_config_start, m_config_end,
                                                                               scanned_symbol, written_symbol,
                                                                               move))
-        # BUG - Use on https://turingmachine.io fails - https://github.com/aepsilon/turing-machine-viz/issues/6
         # REV - This isn't really a list of representations; allow as list at all (move to transitions?) <<<
+        # REV - Must use spaces and not tabs; handle formatting better - https://github.com/aepsilon/turing-machine-viz/issues/6
         elif representation in ['YAML']:
             assert self._is_standard_form
             transition_representations.append('table:')
             for m_config_start in self._transitions.keys():
-                transition_representations.append('\t{0}:'.format(m_config_start))
+                transition_representations.append('  {0}:'.format(m_config_start))
                 for scanned_symbol in self._transitions[m_config_start].keys():
                     #behavior = Behavior(*self._transitions[m_config_start][scanned_symbol])
                     behavior = self._transitions[m_config_start][scanned_symbol]
                     written_symbol = behavior.ops[0]
                     move = behavior.ops[1]
                     m_config_end = behavior.final_m_config
-                    transition_representations.append("\t\t\'{0}\': {{write: \'{1}\', {2}: {3}}}".format(
+                    transition_representations.append("    \'{0}\': {{write: \'{1}\', {2}: {3}}}".format(
                         scanned_symbol,
                         written_symbol,
                         self._format_move(move, representation),
