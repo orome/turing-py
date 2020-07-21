@@ -65,11 +65,12 @@ FORMAT_TRANSITION = {
 
 
 # TBD - Improve format documentation
-# m-configs and symbols are one char (ints tolerated for symbols)
+# symbols are one char
+# m-configs are strings (though some repreentations will be hard to read with m-configs longer than one character
 # valid m-configs and sybols are those (inferred) from transitions
 # simply makes no change to the complete configuration if no matching rule is found (unless debugging)
 Symbol = chr
-MConfig = chr
+MConfig = str
 Tape = List[Symbol]
 CompleteConfig = List[Union[Symbol, MConfig]]    # TBD - Limit to one MConfig?
 
@@ -411,7 +412,7 @@ class TuringMachine(object):
 # ======== Some errors
 
 class TuringError(Exception):
-    def __init__(self, bad_token: chr = '', requirement: str = '') -> None:
+    def __init__(self, bad_token: str = '', requirement: str = '') -> None:
         self.bad_token = bad_token
         self.requirement = requirement
 
@@ -438,7 +439,7 @@ class BadToken(TuringError):
 
 
 class NonStandardConfiguration(TuringError):
-    """An encountered machine specification is not present in full standard form (where requried."""
+    """An encountered machine specification is not present in full standard form (where requried)."""
 
     def __str__(self) -> str:
         return str('Machine specification not in standard form: {0}'.format(self.requirement))
