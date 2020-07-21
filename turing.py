@@ -92,9 +92,7 @@ class Behavior(NamedTuple):
 # REV - Better name <<<
 Transitions = Dict[MConfig, Dict[Union[Symbol,Tuple[Symbol]], Union[Behavior,tuple]]]
 
-
-# TBD - Way to override <<<
-E = ' ' # E for "empty"
+E = ' '     # E for "empty"
 F_SYMBOLS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
 L = Step.L
@@ -107,44 +105,51 @@ _HIGHLIGHT_M_CONFIG = "\u001b[44m\u001b[37;1m"  # "\u001b[43;1m\u001b[31;1m"
 _HIGHLIGHT_RESET = "\u001b[0m"
 
 
-# !!! - Definition of alternating machine puts a step where a symbol should be (or vice versa) <<<<
-# TBD - Catch places where standard form is required; test reording with machine in standard form <<<
-# TBD - Grow left
-# TBD - Validaton of arguments and rules
-# TBD - Check single character symbols and m_configurations for presentations that assume it
-# TBD: Fix tape extention and associated copying; add both directions <<<
-# REV - Add support for lists of m_configurations of  "else"/"any"/"all"; for now must explictly list
-# TBD - Allow various ways of providing arguments to constructor
-# TBD - Support richer m_configuration labels (e.g. as comments)
+# !!! - Definition of alternating machine puts a step where a symbol should be (or vice versa) Still true??
+# TBD - Catch places where standard form is required; test reordering with machine in standard form <<<
+# TBD - Convert transitions to standard form
+# TBD - Where add_no_op_transitions is handled, set a property; check where required true (e.g. wolfram representaiton) <<<
+# TBD - Import turingmachine.io format <<<
+# TBD - Import Wolfram format <<<
+# TBD - Allow providing transtions as DN or SD: generate transition dict from them
+# TBD - Add unit tests
 # TBD - Better formatting of comments with tape/config; as new output form or option to str_ functions in class <<<
-# TBD - Expand display_text() with decoration, highlight, arguments, comment on additiona line, long state name, etc.
-# TBD - Pull highlightint out into seperate utility <<<
-# TBD - Graphic/matplotlib version of display_text
+# TBD - Expand display_text() with decoration, highlight, arguments, comment on additional line, long state name, etc.
+# TBD - Pull highlighting out into seperate utility <<<
 # TBD - Reorganize tape as function like transitions, with various representations <<<
-# TBD - CLI
 # TBD - Add tabular formats for transisions <<<
+# TBD - Save entire previous behavior (not just self._step_comment); use in new display (e.g. tuple for last used rule)
+# TBD - Redo formatting for symbols, etc, to be more genaral
+# TBD - Use representations (e.g. SD encoding) for tape and complete configurations as well
+# TBD - Add better handling (detection and marking?) of display for multi character m-configurations
+# TBD - Grow left; fix mishandling of blank on left (see test)
 # TBD - Note where Turing conventions are assumed/enforced (eg one direction, single character symbols); opt disable
-# TBD - Force single character symbol. Allow multi character state, add display for multi character state
+# TBD - Decide how to enforce conventions
+# TBD - Add support for E and F squares; note as convention; opt for no erasures of F squares
+# TBD - Document behavior and transition format and argument requirements
+# TBD - Use "configuration" (m-config + scanned symbol) in names and docs, check use of config vs m_config
+# TBD - Validation of arguments and rules
 # TBD - Warn in docs that multi character state may not work with some representations
 # TBD - Skeleton tables
+# TBD - Add alternate representation for blank (e.g. underline)
 # TBD - Further examples
 #       Universal Turing Machine: https://link.springer.com/content/pdf/bbm%3A978-1-84882-555-0%2F1.pdf
 #       Square root of 2 program (and accuracy test) - https://www.math.utah.edu/~pa/math/q1.html
-# TBD - Add unit tests
-# TBD - Redo formatting for symbols, etc, to be more genaral <<<
-# TBD - Puzzle: find another member of the pattern Description number -> Output
-# TBD - Convert transitions to standard form
-# TBD - Save entire previous behavior (not just self._step_comment); use in new display (e.g. tuple for last used rule)
-# TBD - Export MMA format
-# TBD - Change handling of YAML to generalte JSON (listable) and then convert to YAML for non list output
-# TBD - Import / export turingmachine.io format
-# TBD - Allow providing transtions as DN or SD: generate transition dict from them
+#       Implement representations on pp 146 and 148 <<<
+# TBD - Change handling of YAML to generalte JSON (listable?) and then convert to YAML for non list output
+# TBD - CLI
+# TBD - Graphic/matplotlib version of display_text
 # TBD - Support alternate names for the various representations (SD, DN, etc.)
-# TBD - Force ints to chrs in creating processed transitions
-# TBD - Use representations (e.g. SD encoding) for tape and complete configurations as well
+# TBD - Allow various ways of providing arguments to constructor
+# TBD - Check single character symbols and m_configurations for presentations that assume it
+# TBD - Puzzle: find another member of the pattern Description number -> Output
+# TBD - Terms for: behavior provided for all configurations (even no ops), behavior = one move on char, one char match
+#       Ask on SE, add her and in Automata doc <<<
+#       Use terms above in names and docs
 # REV - Copy arguments provided as lists (e.g. symbol_ordering)
-
-# TBD - Document behavior and transition format and argument requirements <<<
+# REV - Add support for lists of m_configurations of  "else"/"any"/"all"; for now must explictly list
+# REV - Force ints to chrs in creating processed transitions?
+# REV - Allow providing of alternate single symbol m-mconfig (for some presentations)?
 
 
 # ======== A simple Turing machine class
