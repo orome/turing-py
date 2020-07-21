@@ -245,7 +245,7 @@ class TuringMachine(object):
     def tape(self) -> Tape:
         list_tape = []
         # REV - Is Turing's omission of the final blank intentional? - https://cs.stackexchange.com/q/128346/1210
-        for i in range(0, 1+max(self._position, max(self._tape.keys()))):
+        for i in range(min(self._tape.keys()), 1+max(self._position, max(self._tape.keys()))):
             list_tape.append(self._tape[i])
         return list_tape
 
