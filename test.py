@@ -101,10 +101,16 @@ increment_machine = TuringMachine('r', increment, initial_tape="101011")
 for q in increment_machine.steps(500, auto_halt=True):
     print("".join([q.str_complete_configuration().ljust(10), q.step_comment]))
 
-# TBD - Add support for moving left
-# increment_machine = TuringMachine('r', increment, initial_tape="111111")
-# for q in increment_machine.steps(500, auto_halt=True):
-#     print(q.str_tape())
+print("\n-------- Auto halt 500 steps; complete configuration, commented, extend tape left")
+increment_machine = TuringMachine('r', increment, initial_tape="111111")
+for q in increment_machine.steps(15, auto_halt=True):
+    print(q.str_tape())
+
+# BUG - Mishandling of blank on left <<<
+print("\n-------- BUG BUG BUG Auto halt 500 steps; complete configuration, commented, extend tape left")
+increment_machine = TuringMachine('r', increment, initial_tape=" 111111")
+for q in increment_machine.steps(15, auto_halt=True):
+    print(q.str_tape())
 
 
 # -------- Alternating 1/0 machine
