@@ -101,6 +101,10 @@ _HIGHLIGHT_RESET = "\u001b[0m"
 # TBD - Where add_no_op_transitions is handled, set a property; check where required true (e.g. wolfram representaiton) <<<
 # TBD - Import turingmachine.io format <<<
 # TBD - Import Wolfram format <<<
+# REV - Decide whether to handle tuples and leave the provided dict unchanged <<<
+# TBD - Fix adding no op transitions to use explicit_configs and to handle entirly missing initial_m_comfig <<<
+# TBD - Enforce / check standard form <<<
+# TBD - Implement _is_long_moves and handle in display
 # TBD - Allow providing transtions as DN or SD: generate transition dict from them
 # TBD - Add unit tests
 # TBD - Better formatting of comments with tape/config; as new output form or option to str_ functions in class <<<
@@ -160,13 +164,23 @@ class Transitions(object):
                  add_no_op_transitions: bool = False,
                  *args, **kw):
 
-        self._is_standard_form = True
-        # List of m-configs captured from transitions, in order of rules, and then as additional final states found
-        symbols_from_transitions = {E}
+        # These may turn false in the examination below
+        self._is_one_write_max = True
+        self._is_explicit_write = True
+        self._is_standard_form = True   # TBD: Enforce
+        # This is enforced below
+        # REV - Decide whether to handle tuples and leave the provided dict unchanged <<<
+        self._is_single_symbol_match = True
+        # This optionally enforced below, or may change on examination
+        self._is_explcit_configs = True
+        # TBD - Implement <<<
+        self._is_long_moves = False
+
         m_configs_from_transitons = list(transitions.keys())
+        symbols_from_transitions = {E}
 
         # Go through the transitions and find symbols and m_configs, reorganize to have one symbol match per rule,
-        # Determine if the result is in standard form
+        # Determine if _is_standard_form, _is_one_write_max, and thus _is_standard_form
         # Also make sure every behavior is a Behavior
         processed_transitions = deepcopy(transitions)
         for m_config in transitions.keys():
@@ -177,8 +191,19 @@ class Transitions(object):
                 behavior = Behavior(*transitions[m_config][syms])
                 processed_transitions[m_config][syms] = behavior
                 ops = behavior.ops
-                self._is_standard_form = (self._is_standard_form and len(ops) == 2 and
-                                          not isinstance(ops[0], Step) and isinstance(ops[1], Step))
+
+                self._is_one_write_max = (self._is_one_write_max and
+                                          (sum(map(lambda op: not isinstance(op, Step), ops)) == 0 or
+                                          (sum(map(lambda op: not isinstance(op, Step), ops)) == 1 and
+                                           not isinstance(ops[0], Step))) )
+                self._is_explicit_write = (self._is_explicit_write and
+                                           len(ops) != 0 and not isinstance(ops[0], Step))
+
+                self._is_standard_form = (self._is_standard_form and
+                                          len(ops) == 2 and self._is_one_write_max and self._is_explicit_write)
+
+                # self._is_standard_form = (self._is_one_write_max and len(ops) == 2 and
+                #                           not isinstance(ops[0], Step) and isinstance(ops[1], Step))
                 for op in ops:
                     if not isinstance(op, Step):
                         symbols_from_transitions.add(op)
@@ -187,6 +212,7 @@ class Transitions(object):
                     # Order encountered matters for convention, so append rather than add
                     m_configs_from_transitons.append(final_m_config)
                 # Where multiple read symbols are listed, replace with one rule for each, for ease of later indexing
+                # REV - Decide whether to handle tuples and leave the provided dict unchanged <<<
                 if isinstance(syms, tuple):
                     for sym in syms:
                         processed_transitions[m_config][sym] = Behavior(*behavior)
@@ -194,6 +220,8 @@ class Transitions(object):
 
         # !!! - Must be in standard form to work <<<
         # Add any missing no-op rules and expand empty ones (e.g. required for valid Wolfram TuringMachine)
+
+        # TBD - Fix to use _is_explcit_configs and to handle entirly missing initial_m_comfig <<<
         if add_no_op_transitions:
             for m_config in processed_transitions.keys():
                 for sym in symbols_from_transitions:
@@ -214,7 +242,7 @@ class Transitions(object):
             # Default symbol ordering is sorted
             self._symbol_ordering = sorted(list(symbols_from_transitions))
         else:
-            # If E-symbol ordering is specified ordering is blank, sorted F-symbols, provided E-symbol ordering
+            # If E-symbol ordering is blank, sorted F-symbols, provided E-symbol ordering
             self._symbol_ordering = [E] + sorted(
                 filter(lambda s: s in F_SYMBOLS, symbols_from_transitions)) + e_symbol_ordering.copy()
         assert sorted(self._symbol_ordering) == sorted(symbols_from_transitions), "Ordering of symbols is incomplete"
@@ -308,7 +336,7 @@ class Transitions(object):
                         self._format_move(move, representation),
                         m_config_end))
         return transition_representations
-    
+
     def transitions(self, representation: Representation = None, as_list: bool = False) -> Union[TransitionsDict, list, str]:
         if representation in ['SD', 'DN', 'tuples', 'YAML', 'wolfram']:
             if not self._is_standard_form:
