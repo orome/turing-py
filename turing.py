@@ -205,14 +205,9 @@ class Transitions(object):
                                                                         processed_transitions[m_config][
                                                                             sym].final_m_config,
                                                                         processed_transitions[m_config][sym].comment)
-        # Store the Tape internally as a dict
-        #self._dict_initial_tape = collections.defaultdict(lambda: E)
-        # for position, symbol in enumerate(initial_tape):
-        #     self._dict_initial_tape[position] = symbol
 
         # REV - Copy necessary?
         self._transitions = deepcopy(processed_transitions)
-
 
         # Ordering of symbols for various representations (e.g. S.D.)
         if e_symbol_ordering is None:
@@ -236,6 +231,17 @@ class Transitions(object):
     @property
     def dict(self) -> TransitionsDict:
         return self._transitions   # REV - Copy? <<<
+
+    def behavior(self, m_config: MConfig, symbol: Symbol) -> Behavior:
+        try:
+            self._transitions[m_config]
+        except KeyError:
+            raise UnknownMConfig(m_config)
+        try:
+            self._transitions[m_config][symbol]
+        except KeyError:
+            raise UnknownSymbol(symbol)
+        return self._transitions[m_config][symbol]
 
     def _format_move(self, move: Step, representation: Representation) -> str:
         assert isinstance(move, Step)
@@ -292,7 +298,6 @@ class Transitions(object):
             for m_config_start in self._transitions.keys():
                 transition_representations.append('  {0}:'.format(m_config_start))
                 for scanned_symbol in self._transitions[m_config_start].keys():
-                    #behavior = Behavior(*self._transitions[m_config_start][scanned_symbol])
                     behavior = self._transitions[m_config_start][scanned_symbol]
                     written_symbol = behavior.ops[0]
                     move = behavior.ops[1]
@@ -319,6 +324,7 @@ class Transitions(object):
         else:
             return self.dict
 
+
 # ======== A simple Turing machine class
 
 class TuringMachine(object):
@@ -334,51 +340,6 @@ class TuringMachine(object):
         if isinstance(initial_tape, str):
             initial_tape = list(initial_tape)
 
-        # self._is_standard_form = True
-        # #>>symbols_from_transitions = set(initial_tape + [E])
-        # # List of m-configs captured from transitions, in order of rules, and then as additional final states found
-        # m_configs_from_transitons = list(transitions.keys())
-        #
-        # # Go through the transitions and find symbols and m_configs, reorganize to have one symbol match per rule,
-        # # Determine if the result is in standard form
-        # # Also make sure every behavior is a Behavior
-        # processed_transitions = deepcopy(transitions)
-        # for m_config in transitions.keys():
-        #     for syms in transitions[m_config].keys():
-        #         # Collect all symbols and m-configurations used mentioned in transitions
-        #         for sym in tuple(syms):
-        #             symbols_from_transitions.add(sym)
-        #         behavior = Behavior(*transitions[m_config][syms])
-        #         processed_transitions[m_config][syms] = behavior
-        #         ops = behavior.ops
-        #         self._is_standard_form = (self._is_standard_form and len(ops) == 2 and
-        #                                   not isinstance(ops[0], Step) and isinstance(ops[1], Step))
-        #         for op in ops:
-        #             if not isinstance(op, Step):
-        #                 symbols_from_transitions.add(op)
-        #         final_m_config = behavior.final_m_config
-        #         if final_m_config not in m_configs_from_transitons:
-        #             # Order encountered matters for convention, so append rather than add
-        #             m_configs_from_transitons.append(final_m_config)
-        #         # Where multiple read symbols are listed, replace with one rule for each, for ease of later indexing
-        #         if isinstance(syms, tuple):
-        #             for sym in syms:
-        #                 processed_transitions[m_config][sym] = Behavior(*behavior)
-        #             del(processed_transitions[m_config][syms])
-        #
-        # # !!! - Must be in standard form to work <<<
-        # # Add any missing no-op rules and expand empty ones (e.g. required for valid Wolfram TuringMachine)
-        # if add_no_op_transitions:
-        #     for m_config in processed_transitions.keys():
-        #         for sym in symbols_from_transitions:
-        #             if sym not in processed_transitions[m_config].keys():
-        #                 processed_transitions[m_config][sym] = Behavior([sym, N], m_config, "No-op")
-        #             # TBD - Pythonic way to change on of the named parameters
-        #             elif not processed_transitions[m_config][sym].ops:
-        #                 processed_transitions[m_config][sym] = Behavior([sym, N],
-        #                                                                 processed_transitions[m_config][sym].final_m_config,
-        #                                                                 processed_transitions[m_config][sym].comment)
-
         # Store the Tape internally as a dict
         self._dict_initial_tape = collections.defaultdict(lambda : E)
         for position, symbol in enumerate(initial_tape):
@@ -388,23 +349,6 @@ class TuringMachine(object):
         self._transitions = Transitions(transitions, e_symbol_ordering, m_config_ordering, add_no_op_transitions)
         # TBD - Add ability to set other than defaults with optional arguments
         self._initial_position = initial_position
-
-        # # Ordering of symbols for various representations (e.g. S.D.)
-        # if e_symbol_ordering is None:
-        #     # Default symbol ordering is sorted
-        #     self._symbol_ordering = sorted(list(symbols_from_transitions))
-        # else:
-        #     # If E-symbol ordering is specified ordering is blank, sorted F-symbols, provided E-symbol ordering
-        #     self._symbol_ordering = [E] + sorted(filter(lambda s: s in F_SYMBOLS, symbols_from_transitions)) + e_symbol_ordering.copy()
-        # assert sorted(self._symbol_ordering) == sorted(symbols_from_transitions), "Ordering of symbols is incomplete"
-        #
-        # if m_config_ordering is None:
-        #     # Default m-configuration ordering is as encountered in provided transitions
-        #     self._m_config_ordering = m_configs_from_transitons
-        # else:
-        #     # If m-config ordering is specified, that is used
-        #     self._m_config_ordering = m_config_ordering.copy()
-        # assert sorted(self._m_config_ordering) == sorted(m_configs_from_transitons), "Ordering of m-configs is incomplete"
 
         # TBD - Way to not have to repeat this (and avoid errors about setting outside of __init__?
         #self.reset()
@@ -453,30 +397,17 @@ class TuringMachine(object):
 
     def step(self, debug: bool = False) -> None:
         try:
-            #behavior = Behavior(*self._transitions[self._m_configuration][self._tape[self._position]])
-            behavior = self._transitions.dict[self._m_configuration][self._tape[self._position]]
-        # REV - Better way of detecting missing behavior for current m_config or current symbol
-        except KeyError:
+            behavior = self._transitions.behavior(self._m_configuration, self._tape[self._position])
+            for op in behavior.ops:
+                if isinstance(op, Step):
+                    self._position += op
+                else:
+                    self._tape[self._position] = op
+            self._m_configuration = behavior.final_m_config
+            self._step_comment = behavior.comment
+        except (UnknownMConfig, UnknownSymbol) as e:
             if debug:
-                # If debugging, treat absense of a behavior for the current configuration as an error
-                try:
-                    self._transitions.dict[self._m_configuration]
-                except KeyError:
-                    raise UnknownMConfig(self._m_configuration)
-                try:
-                    self._transitions.dict[self._m_configuration][self._tape[self._position]]
-                except KeyError:
-                    raise UnknownSymbol(self._tape[self._position])
-            else:
-                # If not debugging, do nothing if no behavior matching the current configuration is found
-                return
-        for op in behavior.ops:
-            if isinstance(op, Step):
-                self._position += op
-            else:
-                self._tape[self._position] = op
-        self._m_configuration = behavior.final_m_config
-        self._step_comment = behavior.comment
+                raise e
 
     # Sequential states of the machine, starting with the current state and leaving the machine in the last state
     def steps(self, steps: int = None, include_current: bool = True, reset: bool = True, extend: bool = False,
