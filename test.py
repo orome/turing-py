@@ -239,44 +239,44 @@ print("\n\n======== Orderings of m-configurations and symbols")
 
 increasing_machine = TuringMachine('b', increasing, initial_tape=E)
 print("\n-------- Default symbol ordering, increasing number of 1s")
-print(increasing_machine._m_config_ordering)
-print(increasing_machine._symbol_ordering)
+print(increasing_machine._transitions._m_config_ordering)
+print(increasing_machine._transitions._symbol_ordering)
 
 increasing_machine = TuringMachine('b', increasing, initial_tape=E,
                                    m_config_ordering=['f', 'p', 'b', 'q', 'o'], e_symbol_ordering=['ə','x'])
 print("\n-------- Customized symbol ordering, increasing number of 1s")
-print(increasing_machine._m_config_ordering)
-print(increasing_machine._symbol_ordering)
+print(increasing_machine._transitions._m_config_ordering)
+print(increasing_machine._transitions._symbol_ordering)
 
 alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E)
 print("\n-------- Default symbol ordering, alternating 0s and 1s")
-print(alternate_machine_standard._m_config_ordering)
-print(alternate_machine_standard._symbol_ordering)
+print(alternate_machine_standard._transitions._m_config_ordering)
+print(alternate_machine_standard._transitions._symbol_ordering)
 print(alternate_machine_standard.transitions('tuples'))
 
 alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E,
                                            m_config_ordering=['f', 'c', 'e', 'b'])
 print("\n-------- Customized symbol ordering, alternating 0s and 1s")
-print(alternate_machine_standard._m_config_ordering)
-print(alternate_machine_standard._symbol_ordering)
+print(alternate_machine_standard._transitions._m_config_ordering)
+print(alternate_machine_standard._transitions._symbol_ordering)
 print(alternate_machine_standard.transitions('tuples'))
 
 
 
 # -------- Debug
 
-# print("\n\n======== DEBUG")
-#
+print("\n\n======== DEBUG")
+
 # print("\n-------- Test bad m-configuration")
 # alternate_machine_compact = TuringMachine('Z', alternate_compact, initial_tape=E)
 # for q in alternate_machine_compact.steps(10, debug = True):
 #     print(q.complete_configuration())
-#
+
 # print("\n-------- Test bad symbol")
 # alternate_machine_compact = TuringMachine('b', alternate_compact, initial_tape="X")
 # for q in alternate_machine_compact.steps(10, debug = True):
 #     print(q.complete_configuration())
-#
+
 # print("\n-------- Test attempt to use non-standard configuration where reqired")
 # alternate_machine_compact = TuringMachine('b', alternate_compact, initial_tape="X")
 # print(alternate_machine_compact.transitions())
