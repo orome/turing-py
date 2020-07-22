@@ -81,17 +81,6 @@ class Behavior(NamedTuple):
     final_m_config: MConfig
     comment: str = ""
 
-
-# Transitions are dictionaries of the form
-#   {start_m_config: {matched_character_1: behavior_1, ...}}
-# where for convenience, matched_character_1 can be a tuple of matched characters, and the behaviors may be provided
-# as tuples rather than Behaviors.
-# Where tuples of matched characters are provided, these will be replaced with one entry of the form above for each
-# character in the tuple. If all provided behaviors are in standard form, then self._is_standard_form == True.
-# REV - Allow Behavior to be alternately specified as just a tuple (coerced when used)
-# REV - Better name <<<
-Transitions = Dict[MConfig, Dict[Union[Symbol,Tuple[Symbol]], Union[Behavior,tuple]]]
-
 E = ' '     # E for "empty"
 F_SYMBOLS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
@@ -153,24 +142,27 @@ _HIGHLIGHT_RESET = "\u001b[0m"
 # REV - Allow providing of alternate single symbol m-mconfig (for some presentations)?
 
 
-# ======== A simple Turing machine class
 
-class TuringMachine(object):
+# TransitionsDict are dictionaries of the form
+#   {start_m_config: {matched_character_1: behavior_1, ...}}
+# where for convenience, matched_character_1 can be a tuple of matched characters, and the behaviors may be provided
+# as tuples rather than Behaviors.
+# Where tuples of matched characters are provided, these will be replaced with one entry of the form above for each
+# character in the tuple. If all provided behaviors are in standard form, then self._is_standard_form == True.
+# REV - Allow Behavior to be alternately specified as just a tuple (coerced when used)
 
-    def __init__(self, initial_m_configuration: MConfig, transitions: Transitions,
-                 initial_tape: Union[Tape, str] = E, initial_position: int = 0,
+TransitionsDict = Dict[MConfig, Dict[Union[Symbol,Tuple[Symbol]], Union[Behavior,tuple]]]
+
+
+class Transitions(object):
+    def __init__(self, transitions: TransitionsDict,
                  e_symbol_ordering: list = None, m_config_ordering: list = None,
                  add_no_op_transitions: bool = False,
                  *args, **kw):
 
-        # Process alternate forms for arguments (tape a string, tuple for matched symbols with same behavior)
-        # REV - Lots of deepcopy which may not be needed
-        if isinstance(initial_tape, str):
-            initial_tape = list(initial_tape)
-
         self._is_standard_form = True
-        symbols_from_transitions = set(initial_tape + [E])
         # List of m-configs captured from transitions, in order of rules, and then as additional final states found
+        symbols_from_transitions = {E}
         m_configs_from_transitons = list(transitions.keys())
 
         # Go through the transitions and find symbols and m_configs, reorganize to have one symbol match per rule,
@@ -198,7 +190,7 @@ class TuringMachine(object):
                 if isinstance(syms, tuple):
                     for sym in syms:
                         processed_transitions[m_config][sym] = Behavior(*behavior)
-                    del(processed_transitions[m_config][syms])
+                    del (processed_transitions[m_config][syms])
 
         # !!! - Must be in standard form to work <<<
         # Add any missing no-op rules and expand empty ones (e.g. required for valid Wolfram TuringMachine)
@@ -210,18 +202,17 @@ class TuringMachine(object):
                     # TBD - Pythonic way to change on of the named parameters
                     elif not processed_transitions[m_config][sym].ops:
                         processed_transitions[m_config][sym] = Behavior([sym, N],
-                                                                        processed_transitions[m_config][sym].final_m_config,
+                                                                        processed_transitions[m_config][
+                                                                            sym].final_m_config,
                                                                         processed_transitions[m_config][sym].comment)
-
         # Store the Tape internally as a dict
-        self._dict_initial_tape = collections.defaultdict(lambda : E)
-        for position, symbol in enumerate(initial_tape):
-            self._dict_initial_tape[position] = symbol
-        self._initial_m_configuration = initial_m_configuration
+        #self._dict_initial_tape = collections.defaultdict(lambda: E)
+        # for position, symbol in enumerate(initial_tape):
+        #     self._dict_initial_tape[position] = symbol
+
         # REV - Copy necessary?
         self._transitions = deepcopy(processed_transitions)
-        # TBD - Add ability to set other than defaults with optional arguments
-        self._initial_position = initial_position
+
 
         # Ordering of symbols for various representations (e.g. S.D.)
         if e_symbol_ordering is None:
@@ -229,7 +220,8 @@ class TuringMachine(object):
             self._symbol_ordering = sorted(list(symbols_from_transitions))
         else:
             # If E-symbol ordering is specified ordering is blank, sorted F-symbols, provided E-symbol ordering
-            self._symbol_ordering = [E] + sorted(filter(lambda s: s in F_SYMBOLS, symbols_from_transitions)) + e_symbol_ordering.copy()
+            self._symbol_ordering = [E] + sorted(
+                filter(lambda s: s in F_SYMBOLS, symbols_from_transitions)) + e_symbol_ordering.copy()
         assert sorted(self._symbol_ordering) == sorted(symbols_from_transitions), "Ordering of symbols is incomplete"
 
         if m_config_ordering is None:
@@ -238,105 +230,19 @@ class TuringMachine(object):
         else:
             # If m-config ordering is specified, that is used
             self._m_config_ordering = m_config_ordering.copy()
-        assert sorted(self._m_config_ordering) == sorted(m_configs_from_transitons), "Ordering of m-configs is incomplete"
-
-        # TBD - Way to not have to repeat this (and avoid errors about setting outside of __init__?
-        #self.reset()
-        self._tape = self._dict_initial_tape.copy()
-        self._m_configuration = self._initial_m_configuration
-        self._position = self._initial_position
-        self._step_comment = "Initial configuration"
-
-    def reset(self) -> None:
-        self._tape = self._dict_initial_tape.copy()
-        self._m_configuration = self._initial_m_configuration
-        self._position = self._initial_position
-        self._step_comment = "Initial configuration"
+        assert sorted(self._m_config_ordering) == sorted(
+            m_configs_from_transitons), "Ordering of m-configs is incomplete"
 
     @property
-    def tape(self) -> Tape:
-        list_tape = []
-        # REV - Is Turing's omission of the final blank intentional? - https://cs.stackexchange.com/q/128346/1210
-        for i in range(min(self._tape.keys()), 1+max(self._position, max(self._tape.keys()))):
-            list_tape.append(self._tape[i])
-        return list_tape
+    def dict(self) -> TransitionsDict:
+        return self._transitions   # REV - Copy? <<<
 
-    @property
-    def step_comment(self) -> str:
-        return self._step_comment
+    def _format_move(self, move: Step, representation: Representation) -> str:
+        assert isinstance(move, Step)
+        return FORMAT_CHARS[representation]['step_format_fn'](move)
 
-    def complete_configuration(self) -> CompleteConfig:
-        list_tape = self.tape
-        list_tape.insert(self._position, self._m_configuration)
-        return list_tape
-
-    def str_tape(self) -> str:
-        return ''.join([str(elem) for elem in self.tape])
-
-    def str_complete_configuration(self) -> str:
-        return ''.join([str(elem) for elem in self.complete_configuration()])
-
-    # TBD - Expand with decoration, highlight, arguments
-    # TBD - Pull higlighting out into own utility function
-    def display_text(self) -> str:
-        tape = list(self.str_tape())
-        annotation = [' '] * len(tape)
-        tape[self._position] = _HIGHLIGHT_SYMBOL + tape[self._position] + _HIGHLIGHT_RESET
-        annotation[self._position] = _HIGHLIGHT_M_CONFIG + self._m_configuration + _HIGHLIGHT_RESET
-        return ''.join(tape) + '\n' + ''.join(annotation)
-
-    def step(self, debug: bool = False) -> None:
-        try:
-            #behavior = Behavior(*self._transitions[self._m_configuration][self._tape[self._position]])
-            behavior = self._transitions[self._m_configuration][self._tape[self._position]]
-        # REV - Better way of detecting missing behavior for current m_config or current symbol
-        except KeyError:
-            if debug:
-                # If debugging, treat absense of a behavior for the current configuration as an error
-                try:
-                    self._transitions[self._m_configuration]
-                except KeyError:
-                    raise UnknownMConfig(self._m_configuration)
-                try:
-                    self._transitions[self._m_configuration][self._tape[self._position]]
-                except KeyError:
-                    raise UnknownSymbol(self._tape[self._position])
-            else:
-                # If not debugging, do nothing if no behavior matching the current configuration is found
-                return
-        for op in behavior.ops:
-            if isinstance(op, Step):
-                self._position += op
-            else:
-                self._tape[self._position] = op
-        self._m_configuration = behavior.final_m_config
-        self._step_comment = behavior.comment
-
-    # Sequential states of the machine, starting with the current state and leaving the machine in the last state
-    def steps(self, steps: int = None, include_current: bool = True, reset: bool = True, extend: bool = False,
-              auto_halt: bool = False, debug: bool = False) -> Generator[TuringMachine, None, None]:
-        if extend:
-            reset = False
-            include_current = False
-        step = 0
-        if reset:
-            self.reset()
-        if include_current:
-            yield self
-            step += 1
-        while steps is None or step < steps:
-            self._prev_tape = self._tape
-            self._prev_m_configuration = self._m_configuration
-            self._prev_position = self._position
-            self.step(debug)
-            # Stop generating steps if the complete configuration has not changed
-            if auto_halt:
-                if (self._prev_tape == self._tape and
-                        self._prev_m_configuration == self._m_configuration and
-                        self._prev_position == self._position):
-                    return
-            yield self
-            step += 1
+    def _format_seperator(self, representation: Representation) -> str:
+        return FORMAT_CHARS[representation]['seperator']
 
     def _format_m_configuration(self, m_config: MConfig, representation: Representation) -> str:
         assert m_config in self._m_config_ordering
@@ -347,13 +253,6 @@ class TuringMachine(object):
         assert not isinstance(symbol, Step) and symbol in self._symbol_ordering
         symbol_indicies = {sym:pos for pos, sym in enumerate(self._symbol_ordering)}
         return FORMAT_CHARS[representation]['symbol_format_fn'](symbol_indicies[symbol])
-
-    def _format_move(self, move: Step, representation: Representation) -> str:
-        assert isinstance(move, Step)
-        return FORMAT_CHARS[representation]['step_format_fn'](move)
-
-    def _format_seperator(self, representation: Representation) -> str:
-        return FORMAT_CHARS[representation]['seperator']
 
     def _format_transition(self, representation: Representation,
                            m_config_start: MConfig, m_config_end: MConfig,
@@ -404,8 +303,8 @@ class TuringMachine(object):
                         self._format_move(move, representation),
                         m_config_end))
         return transition_representations
-
-    def transitions(self, representation: Representation = None, as_list: bool = False) -> Union[Transitions, list, str]:
+    
+    def transitions(self, representation: Representation = None, as_list: bool = False) -> Union[TransitionsDict, list, str]:
         if representation in ['SD', 'DN', 'tuples', 'YAML', 'wolfram']:
             if not self._is_standard_form:
                 raise NonStandardConfiguration(
@@ -418,7 +317,195 @@ class TuringMachine(object):
             else:
                 return self._transitions_list(representation)
         else:
-            return deepcopy(self._transitions)
+            return self.dict
+
+# ======== A simple Turing machine class
+
+class TuringMachine(object):
+
+    def __init__(self, initial_m_configuration: MConfig, transitions: TransitionsDict,
+                 initial_tape: Union[Tape, str] = E, initial_position: int = 0,
+                 e_symbol_ordering: list = None, m_config_ordering: list = None,
+                 add_no_op_transitions: bool = False,
+                 *args, **kw):
+
+        # Process alternate forms for arguments (tape a string, tuple for matched symbols with same behavior)
+        # REV - Lots of deepcopy which may not be needed
+        if isinstance(initial_tape, str):
+            initial_tape = list(initial_tape)
+
+        # self._is_standard_form = True
+        # #>>symbols_from_transitions = set(initial_tape + [E])
+        # # List of m-configs captured from transitions, in order of rules, and then as additional final states found
+        # m_configs_from_transitons = list(transitions.keys())
+        #
+        # # Go through the transitions and find symbols and m_configs, reorganize to have one symbol match per rule,
+        # # Determine if the result is in standard form
+        # # Also make sure every behavior is a Behavior
+        # processed_transitions = deepcopy(transitions)
+        # for m_config in transitions.keys():
+        #     for syms in transitions[m_config].keys():
+        #         # Collect all symbols and m-configurations used mentioned in transitions
+        #         for sym in tuple(syms):
+        #             symbols_from_transitions.add(sym)
+        #         behavior = Behavior(*transitions[m_config][syms])
+        #         processed_transitions[m_config][syms] = behavior
+        #         ops = behavior.ops
+        #         self._is_standard_form = (self._is_standard_form and len(ops) == 2 and
+        #                                   not isinstance(ops[0], Step) and isinstance(ops[1], Step))
+        #         for op in ops:
+        #             if not isinstance(op, Step):
+        #                 symbols_from_transitions.add(op)
+        #         final_m_config = behavior.final_m_config
+        #         if final_m_config not in m_configs_from_transitons:
+        #             # Order encountered matters for convention, so append rather than add
+        #             m_configs_from_transitons.append(final_m_config)
+        #         # Where multiple read symbols are listed, replace with one rule for each, for ease of later indexing
+        #         if isinstance(syms, tuple):
+        #             for sym in syms:
+        #                 processed_transitions[m_config][sym] = Behavior(*behavior)
+        #             del(processed_transitions[m_config][syms])
+        #
+        # # !!! - Must be in standard form to work <<<
+        # # Add any missing no-op rules and expand empty ones (e.g. required for valid Wolfram TuringMachine)
+        # if add_no_op_transitions:
+        #     for m_config in processed_transitions.keys():
+        #         for sym in symbols_from_transitions:
+        #             if sym not in processed_transitions[m_config].keys():
+        #                 processed_transitions[m_config][sym] = Behavior([sym, N], m_config, "No-op")
+        #             # TBD - Pythonic way to change on of the named parameters
+        #             elif not processed_transitions[m_config][sym].ops:
+        #                 processed_transitions[m_config][sym] = Behavior([sym, N],
+        #                                                                 processed_transitions[m_config][sym].final_m_config,
+        #                                                                 processed_transitions[m_config][sym].comment)
+
+        # Store the Tape internally as a dict
+        self._dict_initial_tape = collections.defaultdict(lambda : E)
+        for position, symbol in enumerate(initial_tape):
+            self._dict_initial_tape[position] = symbol
+        self._initial_m_configuration = initial_m_configuration
+        # REV - Copy necessary?
+        self._transitions = Transitions(transitions, e_symbol_ordering, m_config_ordering, add_no_op_transitions)
+        # TBD - Add ability to set other than defaults with optional arguments
+        self._initial_position = initial_position
+
+        # # Ordering of symbols for various representations (e.g. S.D.)
+        # if e_symbol_ordering is None:
+        #     # Default symbol ordering is sorted
+        #     self._symbol_ordering = sorted(list(symbols_from_transitions))
+        # else:
+        #     # If E-symbol ordering is specified ordering is blank, sorted F-symbols, provided E-symbol ordering
+        #     self._symbol_ordering = [E] + sorted(filter(lambda s: s in F_SYMBOLS, symbols_from_transitions)) + e_symbol_ordering.copy()
+        # assert sorted(self._symbol_ordering) == sorted(symbols_from_transitions), "Ordering of symbols is incomplete"
+        #
+        # if m_config_ordering is None:
+        #     # Default m-configuration ordering is as encountered in provided transitions
+        #     self._m_config_ordering = m_configs_from_transitons
+        # else:
+        #     # If m-config ordering is specified, that is used
+        #     self._m_config_ordering = m_config_ordering.copy()
+        # assert sorted(self._m_config_ordering) == sorted(m_configs_from_transitons), "Ordering of m-configs is incomplete"
+
+        # TBD - Way to not have to repeat this (and avoid errors about setting outside of __init__?
+        #self.reset()
+        self._tape = self._dict_initial_tape.copy()
+        self._m_configuration = self._initial_m_configuration
+        self._position = self._initial_position
+        self._step_comment = "Initial configuration"
+
+    def reset(self) -> None:
+        self._tape = self._dict_initial_tape.copy()
+        self._m_configuration = self._initial_m_configuration
+        self._position = self._initial_position
+        self._step_comment = "Initial configuration"
+
+    @property
+    def tape(self) -> Tape:
+        list_tape = []
+        # REV - Is Turing's omission of the final blank intentional? - https://cs.stackexchange.com/q/128346/1210
+        for i in range(min(self._tape.keys()), 1+max(self._position, max(self._tape.keys()))):
+            list_tape.append(self._tape[i])
+        return list_tape
+
+    @property
+    def step_comment(self) -> str:
+        return self._step_comment
+
+    def complete_configuration(self) -> CompleteConfig:
+        list_tape = self.tape
+        list_tape.insert(self._position, self._m_configuration)
+        return list_tape
+
+    def str_tape(self) -> str:
+        return ''.join([str(elem) for elem in self.tape])
+
+    def str_complete_configuration(self) -> str:
+        return ''.join([str(elem) for elem in self.complete_configuration()])
+
+    # TBD - Expand with decoration, highlight, arguments
+    # TBD - Pull higlighting out into own utility function
+    def display_text(self) -> str:
+        tape = list(self.str_tape())
+        annotation = [' '] * len(tape)
+        tape[self._position] = _HIGHLIGHT_SYMBOL + tape[self._position] + _HIGHLIGHT_RESET
+        annotation[self._position] = _HIGHLIGHT_M_CONFIG + self._m_configuration + _HIGHLIGHT_RESET
+        return ''.join(tape) + '\n' + ''.join(annotation)
+
+    def step(self, debug: bool = False) -> None:
+        try:
+            #behavior = Behavior(*self._transitions[self._m_configuration][self._tape[self._position]])
+            behavior = self._transitions.dict[self._m_configuration][self._tape[self._position]]
+        # REV - Better way of detecting missing behavior for current m_config or current symbol
+        except KeyError:
+            if debug:
+                # If debugging, treat absense of a behavior for the current configuration as an error
+                try:
+                    self._transitions.dict[self._m_configuration]
+                except KeyError:
+                    raise UnknownMConfig(self._m_configuration)
+                try:
+                    self._transitions.dict[self._m_configuration][self._tape[self._position]]
+                except KeyError:
+                    raise UnknownSymbol(self._tape[self._position])
+            else:
+                # If not debugging, do nothing if no behavior matching the current configuration is found
+                return
+        for op in behavior.ops:
+            if isinstance(op, Step):
+                self._position += op
+            else:
+                self._tape[self._position] = op
+        self._m_configuration = behavior.final_m_config
+        self._step_comment = behavior.comment
+
+    # Sequential states of the machine, starting with the current state and leaving the machine in the last state
+    def steps(self, steps: int = None, include_current: bool = True, reset: bool = True, extend: bool = False,
+              auto_halt: bool = False, debug: bool = False) -> Generator[TuringMachine, None, None]:
+        if extend:
+            reset = False
+            include_current = False
+        step = 0
+        if reset:
+            self.reset()
+        if include_current:
+            yield self
+            step += 1
+        while steps is None or step < steps:
+            self._prev_tape = self._tape
+            self._prev_m_configuration = self._m_configuration
+            self._prev_position = self._position
+            self.step(debug)
+            # Stop generating steps if the complete configuration has not changed
+            if auto_halt:
+                if (self._prev_tape == self._tape and
+                        self._prev_m_configuration == self._m_configuration and
+                        self._prev_position == self._position):
+                    return
+            yield self
+            step += 1
+
+    def transitions(self, representation: Representation = None, as_list: bool = False) -> Union[TransitionsDict, list, str]:
+        return self._transitions.transitions(representation, as_list)
 
 
 # ======== Some errors
