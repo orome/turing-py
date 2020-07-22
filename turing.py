@@ -73,11 +73,11 @@ Symbol = chr
 MConfig = str
 Tape = List[Symbol]
 CompleteConfig = List[Union[Symbol, MConfig]]    # TBD - Limit to one MConfig?
-
+Operations =  List[Union[Step,Symbol]]
 
 # If the from of ops is [Symbol, Step] then the Behavior is in standard form.
 class Behavior(NamedTuple):
-    ops: List[Union[Step,Symbol]]
+    ops: Operations
     final_m_config: MConfig
     comment: str = ""
 
@@ -107,7 +107,8 @@ _HIGHLIGHT_RESET = "\u001b[0m"
 
 # !!! - Definition of alternating machine puts a step where a symbol should be (or vice versa) Still true??
 # TBD - Catch places where standard form is required; test reordering with machine in standard form <<<
-# TBD - Convert transitions to standard form
+# TBD - Convert transitions to standard form <<<
+# !!! - Fix no op writes in no op operations; see how this is done in Turing <<<
 # TBD - Where add_no_op_transitions is handled, set a property; check where required true (e.g. wolfram representaiton) <<<
 # TBD - Import turingmachine.io format <<<
 # TBD - Import Wolfram format <<<
@@ -199,12 +200,18 @@ class TuringMachine(object):
                         processed_transitions[m_config][sym] = Behavior(*behavior)
                     del(processed_transitions[m_config][syms])
 
-        # Add any missing no-op rules (e.g. required for valid Wolfram TuringMachine
+        # !!! - Must be in standard form to work <<<
+        # Add any missing no-op rules and expand empty ones (e.g. required for valid Wolfram TuringMachine)
         if add_no_op_transitions:
             for m_config in processed_transitions.keys():
                 for sym in symbols_from_transitions:
                     if sym not in processed_transitions[m_config].keys():
-                        processed_transitions[m_config][sym] = Behavior([sym, N], m_config)
+                        processed_transitions[m_config][sym] = Behavior([sym, N], m_config, "No-op")
+                    # TBD - Pythonic way to change on of the named parameters
+                    elif not processed_transitions[m_config][sym].ops:
+                        processed_transitions[m_config][sym] = Behavior([sym, N],
+                                                                        processed_transitions[m_config][sym].final_m_config,
+                                                                        processed_transitions[m_config][sym].comment)
 
         # Store the Tape internally as a dict
         self._dict_initial_tape = collections.defaultdict(lambda : E)
