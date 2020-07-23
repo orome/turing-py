@@ -359,8 +359,6 @@ class TuringMachine(object):
 
     def __init__(self, initial_m_configuration: MConfig, transitions: Union[TransitionsDict, Transitions],
                  initial_tape: Union[Tape, str] = E, initial_position: int = 0,
-                 e_symbol_ordering: list = None, m_config_ordering: list = None,
-                 add_no_op_transitions: bool = False,
                  *args, **kw):
 
         # Process alternate forms for arguments (tape a string, tuple for matched symbols with same behavior)
@@ -377,7 +375,7 @@ class TuringMachine(object):
         if isinstance(transitions, Transitions):
             self._transitions = deepcopy(transitions)
         else:
-            self._transitions = Transitions(transitions, e_symbol_ordering, m_config_ordering, add_no_op_transitions)
+            self._transitions = Transitions(transitions)
         # TBD - Add ability to set other than defaults with optional arguments
         self._initial_position = initial_position
 

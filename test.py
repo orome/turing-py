@@ -1,4 +1,4 @@
-from turing import TuringMachine, R, L, N, E, Behavior
+from turing import TuringMachine, Transitions, R, L, N, E, Behavior
 
 
 import sys
@@ -219,7 +219,8 @@ print(alternate_machine_standard.transitions('tuples', True))
 
 print("\n--------- Wolfram TuringMachine rules for alternating 1s and 0s, with blanks")
 
-alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E, add_no_op_transitions=True)
+alternate_standard_w_noop =Transitions(alternate_standard, add_no_op_transitions=True)
+alternate_machine_standard = TuringMachine('b', alternate_standard_w_noop, initial_tape=E)
 print(alternate_machine_standard.transitions('wolfram'))
 
 print("\n--------- YAML for alternating 1s and 0s, with blanks (for https://turingmachine.io)")
@@ -242,8 +243,8 @@ print("\n-------- Default symbol ordering, increasing number of 1s")
 print(increasing_machine._transitions._m_config_ordering)
 print(increasing_machine._transitions._symbol_ordering)
 
-increasing_machine = TuringMachine('b', increasing, initial_tape=E,
-                                   m_config_ordering=['f', 'p', 'b', 'q', 'o'], e_symbol_ordering=['ə','x'])
+increasing_reordered = Transitions(increasing, m_config_ordering=['f', 'p', 'b', 'q', 'o'], e_symbol_ordering=['ə','x'])
+increasing_machine = TuringMachine('b', increasing_reordered, initial_tape=E)
 print("\n-------- Customized symbol ordering, increasing number of 1s")
 print(increasing_machine._transitions._m_config_ordering)
 print(increasing_machine._transitions._symbol_ordering)
@@ -254,8 +255,8 @@ print(alternate_machine_standard._transitions._m_config_ordering)
 print(alternate_machine_standard._transitions._symbol_ordering)
 print(alternate_machine_standard.transitions('tuples'))
 
-alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E,
-                                           m_config_ordering=['f', 'c', 'e', 'b'])
+alternate_standard_reordered = Transitions(alternate_standard,  m_config_ordering=['f', 'c', 'e', 'b'])
+alternate_machine_standard = TuringMachine('b', alternate_standard_reordered, initial_tape=E)
 print("\n-------- Customized symbol ordering, alternating 0s and 1s")
 print(alternate_machine_standard._transitions._m_config_ordering)
 print(alternate_machine_standard._transitions._symbol_ordering)
