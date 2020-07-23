@@ -357,7 +357,7 @@ class Transitions(object):
 
 class TuringMachine(object):
 
-    def __init__(self, initial_m_configuration: MConfig, transitions: TransitionsDict,
+    def __init__(self, initial_m_configuration: MConfig, transitions: Union[TransitionsDict, Transitions],
                  initial_tape: Union[Tape, str] = E, initial_position: int = 0,
                  e_symbol_ordering: list = None, m_config_ordering: list = None,
                  add_no_op_transitions: bool = False,
@@ -374,7 +374,10 @@ class TuringMachine(object):
             self._dict_initial_tape[position] = symbol
         self._initial_m_configuration = initial_m_configuration
         # REV - Copy necessary?
-        self._transitions = Transitions(transitions, e_symbol_ordering, m_config_ordering, add_no_op_transitions)
+        if isinstance(transitions, Transitions):
+            self._transitions = deepcopy(transitions)
+        else:
+            self._transitions = Transitions(transitions, e_symbol_ordering, m_config_ordering, add_no_op_transitions)
         # TBD - Add ability to set other than defaults with optional arguments
         self._initial_position = initial_position
 
