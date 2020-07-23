@@ -207,6 +207,15 @@ print("\n--------- DN for alternating 1s and 0s, with blanks (Petzold p. 140, Tu
 alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E)
 print(alternate_machine_standard.transitions('DN'))
 
+print("\n--------- Processing a DN")
+
+dn = 31332531173113353111731113322531111731111335317
+print(Transitions.dict_from_dn(dn))
+print(Transitions.dict_from_dn(dn, m_config_ordering=['P', 'Q', 'r', 'S', 'T']))
+print(Transitions.dict_from_dn(dn, m_config_ordering=['W', 'X', 'Y', 'Z']))
+#alternate_machine_standard = TuringMachine('b', Transitions.dict_from_dn(dn), initial_tape=E)
+print(TuringMachine('b', Transitions.dict_from_dn(dn), initial_tape=E).transitions('DN'))
+
 print("\n--------- Tuple standard form for alternating 1s and 0s, with blanks (Petzold p. 139, Turing p. 241)")
 
 alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E)

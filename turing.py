@@ -11,6 +11,7 @@ A simple Turing Machine implementation aimed at simulating the machines in Turin
 from __future__ import annotations
 
 import collections
+import re
 from typing import List, Dict, Union, Tuple, NamedTuple, Generator
 from enum import IntEnum, Enum
 from copy import deepcopy
@@ -159,10 +160,13 @@ TransitionsDict = Dict[MConfig, Dict[Union[Symbol,Tuple[Symbol]], Union[Behavior
 
 
 class Transitions(object):
-    def __init__(self, transitions: TransitionsDict,
+    def __init__(self, transitions: Union[TransitionsDict, int],
                  e_symbol_ordering: list = None, m_config_ordering: list = None,
                  add_no_op_transitions: bool = False,
                  *args, **kw):
+
+        if isinstance(transitions, int):
+            transitions = self.dict_from_dn(transitions, e_symbol_ordering, m_config_ordering)
 
         # These may turn false in the examination below
         self._is_one_write_max = True
@@ -255,6 +259,36 @@ class Transitions(object):
             self._m_config_ordering = m_config_ordering.copy()
         assert sorted(self._m_config_ordering) == sorted(
             m_configs_from_transitons), "Ordering of m-configs is incomplete"
+
+    @staticmethod
+    def dict_from_dn(dn: int,
+                     m_config_ordering: list = None, e_symbol_ordering: list = None, f_symbol_num: int = 2) -> TransitionsDict:
+        rule_numbers = str(dn).split(FORMAT_TRANSITION['DN'][-1])[:-1]
+        split_rule_numbers = [re.split('[3]', t.replace('5', '35'))[1:] for t in rule_numbers]
+
+        if not e_symbol_ordering:
+            e_symbol_ordering = list('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
+        symbol_ordering = [E] + [str(f) for f in range(f_symbol_num)] + e_symbol_ordering.copy()
+
+        if not m_config_ordering:
+            m_config_fmt_fn = FORMAT_CHARS['tuples']['m_config_format_fn']
+        else:
+            m_config_fmt_fn = lambda i: m_config_ordering[i]
+        move_fmt = {FORMAT_CHARS['DN']['step_format_fn'](i): i for i in [N, R, L] }
+
+        transition_dict = dict()
+        for i, split_rule in enumerate(split_rule_numbers):
+            initial_m_config = m_config_fmt_fn(len(split_rule[0]) - 1)
+            read_symbol = symbol_ordering[len(split_rule[1])]
+            written_symbol = symbol_ordering[len(split_rule[2])]
+            move = move_fmt[split_rule[3]]
+            final_m_config = m_config_fmt_fn(len(split_rule[4]) - 1)
+            if not initial_m_config in transition_dict:
+                transition_dict[initial_m_config] = {}
+            transition_dict[initial_m_config][read_symbol] = Behavior([written_symbol, move], final_m_config,
+                                                                      rule_numbers[i])
+
+        return deepcopy(transition_dict)
 
     @property
     def dict(self) -> TransitionsDict:
