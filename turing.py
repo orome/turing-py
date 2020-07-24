@@ -97,18 +97,23 @@ _HIGHLIGHT_RESET = "\u001b[0m"
 
 
 # !!! - Definition of alternating machine puts a step where a symbol should be (or vice versa) Still true??
+# TBD - Fix places where private functions are being used; tidy up properties <<<
+# TBD - Better differentate handling of representations that don't work as lists of instructions vs those that do <<<
+# TBD - Option to print blank differently <<<
+# TBD - Representation as table (in various ways) <<<
+# TBD - Handle tape representations in parallel with instructions; make sure formatting defs are in the right place <<<
 # TBD - Catch places where standard form is required; test reordering with machine in standard form <<<
 # TBD - Convert instructions to standard form <<<
+# TBD - Add list of manipulations/transformations (add no ops, explicit match, etc.) as args to Transitions constructor <<<
 # !!! - Fix no op writes in no op operations; see how this is done in Turing <<<
 # TBD - Where add_no_op_instructions is handled, set a property; check where required true (e.g. wolfram representaiton) <<<
 # TBD - Import turingmachine.io format <<<
 # TBD - Import Wolfram format <<<
-# REV - Decide whether to handle tuples and leave the provided dict unchanged <<<
+# REV - Decide whether to handle tuples and leave the provided dict unchanged
 # TBD - Fix adding no op instructions to use explicit_configs and to handle entirly missing initial_m_comfig <<<
 # TBD - Enforce / check standard form <<<
 # TBD - Implement _is_long_moves and handle in display
-# TBD - Allow providing transtions as DN or SD: generate instruction dict from them
-# TBD - Add unit tests
+# TBD - Add unit tests and reorganize tests (use example from Enigma project) <<<
 # TBD - Better formatting of comments with tape/config; as new output form or option to str_ functions in class <<<
 # TBD - Expand display_text() with decoration, highlight, arguments, comment on additional line, long state name, etc.
 # TBD - Pull highlighting out into seperate utility <<<
@@ -134,6 +139,7 @@ _HIGHLIGHT_RESET = "\u001b[0m"
 #       Square root of 2 program (and accuracy test) - https://www.math.utah.edu/~pa/math/q1.html
 #       Implement representations on pp 146 and 148 <<<
 # TBD - Change handling of YAML to generalte JSON (listable?) and then convert to YAML for non list output
+# TBD - Support dict_from_representation for YAML/JSON and wolfram (assert no long moves)
 # TBD - CLI
 # TBD - Graphic/matplotlib version of display_text
 # TBD - Support alternate names for the various representations (SD, DN, etc.)
