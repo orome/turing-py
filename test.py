@@ -79,6 +79,15 @@ increasing = {
          E: (['0', L, L], 'o')},
 }
 
+# Blanks to the right, as DN (Petzold p. 177)
+blanks_right_dn = 31335317
+
+# 0 to the right, as DN (Petzold p. 177)
+zeros_right_dn = 313325317
+
+# 1 to the right, as DN (Petzold p. 177)
+ones_right_dn = 3133225317
+
 
 # ======== Example machine runs and displays
 
@@ -241,6 +250,12 @@ print("\n--------- Dictionary for alternating 1s and 0s, with blanks")
 
 alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E)
 print(alternate_machine_standard.transitions())
+
+print("\n--------- The first 8 steps for the left to right machines with the three lowest DNs (Petzold, p. 177)")
+for dn in [blanks_right_dn, zeros_right_dn, ones_right_dn]:
+    for q in TuringMachine('q1', Transitions.dict_from_dn(dn)).steps(8):
+        print(q.str_tape())
+
 
 
 # -------- Orderings of m-configurations and symbols
