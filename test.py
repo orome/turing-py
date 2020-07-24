@@ -1,4 +1,4 @@
-from turing import TuringMachine, Transitions, R, L, N, E, Behavior
+from turing import TuringMachine, Instructions, R, L, N, E, Behavior
 
 
 import sys
@@ -209,51 +209,63 @@ print("\n\n======== Machine definition representations")
 print("\n--------- SD for alternating 1s and 0s, with blanks (Petzold p. 140, Turing p. 241)")
 
 alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E)
-print(alternate_machine_standard.transitions('SD'))
+print(alternate_machine_standard.instructions('SD'))
 
 print("\n--------- DN for alternating 1s and 0s, with blanks (Petzold p. 140, Turing p. 241)")
 
 alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E)
-print(alternate_machine_standard.transitions('DN'))
-
-print("\n--------- Processing a DN")
-
-dn = 31332531173113353111731113322531111731111335317
-print(Transitions.dict_from_dn(dn))
-print(Transitions.dict_from_dn(dn, m_config_ordering=['P', 'Q', 'r', 'S', 'T']))
-print(Transitions.dict_from_dn(dn, m_config_ordering=['W', 'X', 'Y', 'Z']))
-#alternate_machine_standard = TuringMachine('b', Transitions.dict_from_dn(dn), initial_tape=E)
-print(TuringMachine('b', Transitions.dict_from_dn(dn), initial_tape=E).transitions('DN'))
+print(alternate_machine_standard.instructions('DN'))
 
 print("\n--------- Tuple standard form for alternating 1s and 0s, with blanks (Petzold p. 139, Turing p. 241)")
 
 alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E)
-print(alternate_machine_standard.transitions('tuples'))
+print(alternate_machine_standard.instructions('tuples'))
 
 print("\n--------- List of standard form tuples for alternating 1s and 0s, with blanks")
 
 alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E)
-print(alternate_machine_standard.transitions('tuples', True))
+print(alternate_machine_standard.instructions('tuples', True))
 
 print("\n--------- Wolfram TuringMachine rules for alternating 1s and 0s, with blanks")
 
-alternate_standard_w_noop =Transitions(alternate_standard, add_no_op_transitions=True)
+alternate_standard_w_noop =Instructions(alternate_standard, add_no_op_instructions=True)
 alternate_machine_standard = TuringMachine('b', alternate_standard_w_noop, initial_tape=E)
-print(alternate_machine_standard.transitions('wolfram'))
+print(alternate_machine_standard.instructions('wolfram'))
+
+print("\n--------- Processing a DN")
+
+dn = 31332531173113353111731113322531111731111335317
+sd = "DADDCRDAA;DAADDRDAAA;DAAADDCCRDAAAA;DAAAADDRDA;"
+print(Instructions.dict_from_representation(dn, 'DN'))
+print(Instructions.dict_from_representation(dn, 'DN', m_config_ordering=['P', 'Q', 'r', 'S', 'T']))
+print(Instructions.dict_from_representation(dn, 'DN', m_config_ordering=['W', 'X', 'Y', 'Z']))
+print(TuringMachine('b', Instructions.dict_from_representation(dn, 'DN')).instructions('DN'))
+print(TuringMachine('b', Instructions.dict_from_representation(dn, 'DN')).instructions('tuples'))
+print(TuringMachine('b', Instructions.dict_from_representation(dn, 'DN')).instructions('SD'))
+print(TuringMachine('b', Instructions(Instructions.dict_from_representation(dn, 'DN'),
+                                      add_no_op_instructions=True)).instructions('wolfram'))
+print(Instructions.dict_from_representation(sd, 'SD'))
+print(Instructions.dict_from_representation(sd, 'SD', m_config_ordering=['P', 'Q', 'r', 'S', 'T']))
+print(Instructions.dict_from_representation(sd, 'SD', m_config_ordering=['W', 'X', 'Y', 'Z']))
+print(TuringMachine('b', Instructions.dict_from_representation(sd, 'SD')).instructions('DN'))
+print(TuringMachine('b', Instructions.dict_from_representation(sd, 'SD')).instructions('tuples'))
+print(TuringMachine('b', Instructions.dict_from_representation(sd, 'SD')).instructions('SD'))
+print(TuringMachine('b', Instructions(Instructions.dict_from_representation(sd, 'SD'),
+                                      add_no_op_instructions=True)).instructions('wolfram'))
 
 print("\n--------- YAML for alternating 1s and 0s, with blanks (for https://turingmachine.io)")
 
 alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E)
-print(alternate_machine_standard.transitions('YAML'))
+print(alternate_machine_standard.instructions('YAML'))
 
 print("\n--------- Dictionary for alternating 1s and 0s, with blanks")
 
 alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E)
-print(alternate_machine_standard.transitions())
+print(alternate_machine_standard.instructions())
 
 print("\n--------- The first 8 steps for the left to right machines with the three lowest DNs (Petzold, p. 177)")
 for dn in [blanks_right_dn, zeros_right_dn, ones_right_dn]:
-    for q in TuringMachine('q1', Transitions.dict_from_dn(dn)).steps(8):
+    for q in TuringMachine('q1', Instructions.dict_from_representation(dn, 'DN')).steps(8):
         print(q.str_tape())
 
 
@@ -264,27 +276,27 @@ print("\n\n======== Orderings of m-configurations and symbols")
 
 increasing_machine = TuringMachine('b', increasing, initial_tape=E)
 print("\n-------- Default symbol ordering, increasing number of 1s")
-print(increasing_machine._transitions._m_config_ordering)
-print(increasing_machine._transitions._symbol_ordering)
+print(increasing_machine._instructions._m_config_ordering)
+print(increasing_machine._instructions._symbol_ordering)
 
-increasing_reordered = Transitions(increasing, m_config_ordering=['f', 'p', 'b', 'q', 'o'], e_symbol_ordering=['ə','x'])
+increasing_reordered = Instructions(increasing, m_config_ordering=['f', 'p', 'b', 'q', 'o'], e_symbol_ordering=['ə', 'x'])
 increasing_machine = TuringMachine('b', increasing_reordered, initial_tape=E)
 print("\n-------- Customized symbol ordering, increasing number of 1s")
-print(increasing_machine._transitions._m_config_ordering)
-print(increasing_machine._transitions._symbol_ordering)
+print(increasing_machine._instructions._m_config_ordering)
+print(increasing_machine._instructions._symbol_ordering)
 
 alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E)
 print("\n-------- Default symbol ordering, alternating 0s and 1s")
-print(alternate_machine_standard._transitions._m_config_ordering)
-print(alternate_machine_standard._transitions._symbol_ordering)
-print(alternate_machine_standard.transitions('tuples'))
+print(alternate_machine_standard._instructions._m_config_ordering)
+print(alternate_machine_standard._instructions._symbol_ordering)
+print(alternate_machine_standard.instructions('tuples'))
 
-alternate_standard_reordered = Transitions(alternate_standard,  m_config_ordering=['f', 'c', 'e', 'b'])
+alternate_standard_reordered = Instructions(alternate_standard, m_config_ordering=['f', 'c', 'e', 'b'])
 alternate_machine_standard = TuringMachine('b', alternate_standard_reordered, initial_tape=E)
 print("\n-------- Customized symbol ordering, alternating 0s and 1s")
-print(alternate_machine_standard._transitions._m_config_ordering)
-print(alternate_machine_standard._transitions._symbol_ordering)
-print(alternate_machine_standard.transitions('tuples'))
+print(alternate_machine_standard._instructions._m_config_ordering)
+print(alternate_machine_standard._instructions._symbol_ordering)
+print(alternate_machine_standard.instructions('tuples'))
 
 
 
@@ -304,5 +316,5 @@ print("\n\n======== DEBUG")
 
 # print("\n-------- Test attempt to use non-standard configuration where reqired")
 # alternate_machine_compact = TuringMachine('b', alternate_compact, initial_tape="X")
-# print(alternate_machine_compact.transitions())
-# print(alternate_machine_compact.transitions('SD'))
+# print(alternate_machine_compact.instructions())
+# print(alternate_machine_compact.instructions('SD'))

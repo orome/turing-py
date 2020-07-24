@@ -57,7 +57,7 @@ FORMAT_CHARS = {
          'seperator': '\n', 'table_begin': '', 'table_end': ''}
 }
 
-FORMAT_TRANSITION = {
+FORMAT_INSTRUCTION = {
     'SD': "{fmt_m_config_start}{fmt_scanned_symbol}{fmt_written_symbol}{fmt_move}{fmt_m_config_end};",
     'DN': "{fmt_m_config_start}{fmt_scanned_symbol}{fmt_written_symbol}{fmt_move}{fmt_m_config_end}7",
     'tuples':"{fmt_m_config_start}{fmt_scanned_symbol}{fmt_written_symbol}{fmt_move}{fmt_m_config_end};",
@@ -68,7 +68,7 @@ FORMAT_TRANSITION = {
 # TBD - Improve format documentation
 # symbols are one char
 # m-configs are strings (though some repreentations will be hard to read with m-configs longer than one character
-# valid m-configs and sybols are those (inferred) from transitions
+# valid m-configs and sybols are those (inferred) from instructions
 # simply makes no change to the complete configuration if no matching rule is found (unless debugging)
 Symbol = chr
 MConfig = str
@@ -84,6 +84,7 @@ class Behavior(NamedTuple):
 
 E = ' '     # E for "empty"
 F_SYMBOLS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+E_SYMBOLS = list('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
 L = Step.L
 R = Step.R
@@ -97,21 +98,21 @@ _HIGHLIGHT_RESET = "\u001b[0m"
 
 # !!! - Definition of alternating machine puts a step where a symbol should be (or vice versa) Still true??
 # TBD - Catch places where standard form is required; test reordering with machine in standard form <<<
-# TBD - Convert transitions to standard form <<<
+# TBD - Convert instructions to standard form <<<
 # !!! - Fix no op writes in no op operations; see how this is done in Turing <<<
-# TBD - Where add_no_op_transitions is handled, set a property; check where required true (e.g. wolfram representaiton) <<<
+# TBD - Where add_no_op_instructions is handled, set a property; check where required true (e.g. wolfram representaiton) <<<
 # TBD - Import turingmachine.io format <<<
 # TBD - Import Wolfram format <<<
 # REV - Decide whether to handle tuples and leave the provided dict unchanged <<<
-# TBD - Fix adding no op transitions to use explicit_configs and to handle entirly missing initial_m_comfig <<<
+# TBD - Fix adding no op instructions to use explicit_configs and to handle entirly missing initial_m_comfig <<<
 # TBD - Enforce / check standard form <<<
 # TBD - Implement _is_long_moves and handle in display
-# TBD - Allow providing transtions as DN or SD: generate transition dict from them
+# TBD - Allow providing transtions as DN or SD: generate instruction dict from them
 # TBD - Add unit tests
 # TBD - Better formatting of comments with tape/config; as new output form or option to str_ functions in class <<<
 # TBD - Expand display_text() with decoration, highlight, arguments, comment on additional line, long state name, etc.
 # TBD - Pull highlighting out into seperate utility <<<
-# TBD - Reorganize tape as function like transitions, with various representations <<<
+# TBD - Reorganize tape as function like instructions, with various representations <<<
 # TBD - Add tabular formats for transisions <<<
 # TBD - Save entire previous behavior (not just self._step_comment); use in new display (e.g. tuple for last used rule)
 # TBD - Redo formatting for symbols, etc, to be more genaral
@@ -121,11 +122,12 @@ _HIGHLIGHT_RESET = "\u001b[0m"
 # TBD - Note where Turing conventions are assumed/enforced (eg one direction, single character symbols); opt disable
 # TBD - Decide how to enforce conventions
 # TBD - Add support for E and F squares; note as convention; opt for no erasures of F squares
-# TBD - Document behavior and transition format and argument requirements
+# TBD - Document behavior and instruction format and argument requirements
 # TBD - Use "configuration" (m-config + scanned symbol) in names and docs, check use of config vs m_config
 # TBD - Validation of arguments and rules
 # TBD - Warn in docs that multi character state may not work with some representations
 # TBD - Skeleton tables
+# TBD - Generalize and clean up dict_from_representation, especially splitting up of instructions into m_configs and ops
 # TBD - Add alternate representation for blank (e.g. underline)
 # TBD - Further examples
 #       Universal Turing Machine: https://link.springer.com/content/pdf/bbm%3A978-1-84882-555-0%2F1.pdf
@@ -143,12 +145,12 @@ _HIGHLIGHT_RESET = "\u001b[0m"
 #       Use terms above in names and docs
 # REV - Copy arguments provided as lists (e.g. symbol_ordering)
 # REV - Add support for lists of m_configurations of  "else"/"any"/"all"; for now must explictly list
-# REV - Force ints to chrs in creating processed transitions?
+# REV - Force ints to chrs in creating processed instructions?
 # REV - Allow providing of alternate single symbol m-mconfig (for some presentations)?
 
 
 
-# TransitionsDict are dictionaries of the form
+# instructionsDict are dictionaries of the form
 #   {start_m_config: {matched_character_1: behavior_1, ...}}
 # where for convenience, matched_character_1 can be a tuple of matched characters, and the behaviors may be provided
 # as tuples rather than Behaviors.
@@ -156,17 +158,19 @@ _HIGHLIGHT_RESET = "\u001b[0m"
 # character in the tuple. If all provided behaviors are in standard form, then self._is_standard_form == True.
 # REV - Allow Behavior to be alternately specified as just a tuple (coerced when used)
 
-TransitionsDict = Dict[MConfig, Dict[Union[Symbol,Tuple[Symbol]], Union[Behavior,tuple]]]
+InstructionsDict = Dict[MConfig, Dict[Union[Symbol, Tuple[Symbol]], Union[Behavior, tuple]]]
 
 
-class Transitions(object):
-    def __init__(self, transitions: Union[TransitionsDict, int],
+class Instructions(object):
+    def __init__(self, instructions: Union[InstructionsDict, int, str],
                  e_symbol_ordering: list = None, m_config_ordering: list = None,
-                 add_no_op_transitions: bool = False,
+                 add_no_op_instructions: bool = False,
                  *args, **kw):
 
-        if isinstance(transitions, int):
-            transitions = self.dict_from_dn(transitions, e_symbol_ordering, m_config_ordering)
+        if isinstance(instructions, int):
+            instructions = self.dict_from_representation(instructions, 'DN', e_symbol_ordering, m_config_ordering)
+        elif isinstance(instructions, str):
+            instructions = self.dict_from_representation(instructions, 'SD', e_symbol_ordering, m_config_ordering)
 
         # These may turn false in the examination below
         self._is_one_write_max = True
@@ -180,20 +184,20 @@ class Transitions(object):
         # TBD - Implement <<<
         self._is_long_moves = False
 
-        m_configs_from_transitons = list(transitions.keys())
-        symbols_from_transitions = {E}
+        m_configs_from_instructions = list(instructions.keys())
+        symbols_from_instructions = {E}
 
-        # Go through the transitions and find symbols and m_configs, reorganize to have one symbol match per rule,
+        # Go through the instructions and find symbols and m_configs, reorganize to have one symbol match per rule,
         # Determine if _is_standard_form, _is_one_write_max, and thus _is_standard_form
         # Also make sure every behavior is a Behavior
-        processed_transitions = deepcopy(transitions)
-        for m_config in transitions.keys():
-            for syms in transitions[m_config].keys():
-                # Collect all symbols and m-configurations used mentioned in transitions
+        processed_instructions = deepcopy(instructions)
+        for m_config in instructions.keys():
+            for syms in instructions[m_config].keys():
+                # Collect all symbols and m-configurations used mentioned in instructions
                 for sym in tuple(syms):
-                    symbols_from_transitions.add(sym)
-                behavior = Behavior(*transitions[m_config][syms])
-                processed_transitions[m_config][syms] = behavior
+                    symbols_from_instructions.add(sym)
+                behavior = Behavior(*instructions[m_config][syms])
+                processed_instructions[m_config][syms] = behavior
                 ops = behavior.ops
 
                 self._is_one_write_max = (self._is_one_write_max and
@@ -210,100 +214,113 @@ class Transitions(object):
                 #                           not isinstance(ops[0], Step) and isinstance(ops[1], Step))
                 for op in ops:
                     if not isinstance(op, Step):
-                        symbols_from_transitions.add(op)
+                        symbols_from_instructions.add(op)
                 final_m_config = behavior.final_m_config
-                if final_m_config not in m_configs_from_transitons:
+                if final_m_config not in m_configs_from_instructions:
                     # Order encountered matters for convention, so append rather than add
-                    m_configs_from_transitons.append(final_m_config)
+                    m_configs_from_instructions.append(final_m_config)
                 # Where multiple read symbols are listed, replace with one rule for each, for ease of later indexing
                 # REV - Decide whether to handle tuples and leave the provided dict unchanged <<<
                 if isinstance(syms, tuple):
                     for sym in syms:
-                        processed_transitions[m_config][sym] = Behavior(*behavior)
-                    del (processed_transitions[m_config][syms])
+                        processed_instructions[m_config][sym] = Behavior(*behavior)
+                    del (processed_instructions[m_config][syms])
 
         # !!! - Must be in standard form to work <<<
         # Add any missing no-op rules and expand empty ones (e.g. required for valid Wolfram TuringMachine)
 
         # TBD - Fix to use _is_explcit_configs and to handle entirly missing initial_m_comfig <<<
-        if add_no_op_transitions:
-            for m_config in processed_transitions.keys():
-                for sym in symbols_from_transitions:
-                    if sym not in processed_transitions[m_config].keys():
-                        processed_transitions[m_config][sym] = Behavior([sym, N], m_config, "No-op")
-                    # TBD - Pythonic way to change on of the named parameters
-                    elif not processed_transitions[m_config][sym].ops:
-                        processed_transitions[m_config][sym] = Behavior([sym, N],
-                                                                        processed_transitions[m_config][
+        if add_no_op_instructions:
+            for m_config in processed_instructions.keys():
+                for sym in symbols_from_instructions:
+                    if sym not in processed_instructions[m_config].keys():
+                        processed_instructions[m_config][sym] = Behavior([sym, N], m_config, "No-op")
+                    # TBD - Pythonic way to change just one of the named parameters
+                    elif not processed_instructions[m_config][sym].ops:
+                        processed_instructions[m_config][sym] = Behavior([sym, N],
+                                                                        processed_instructions[m_config][
                                                                             sym].final_m_config,
-                                                                        processed_transitions[m_config][sym].comment)
+                                                                        processed_instructions[m_config][sym].comment)
 
         # REV - Copy necessary?
-        self._transitions = deepcopy(processed_transitions)
+        self._instructions = deepcopy(processed_instructions)
 
         # Ordering of symbols for various representations (e.g. S.D.)
         if e_symbol_ordering is None:
             # Default symbol ordering is sorted
-            self._symbol_ordering = sorted(list(symbols_from_transitions))
+            self._symbol_ordering = sorted(list(symbols_from_instructions))
         else:
             # If E-symbol ordering is blank, sorted F-symbols, provided E-symbol ordering
             self._symbol_ordering = [E] + sorted(
-                filter(lambda s: s in F_SYMBOLS, symbols_from_transitions)) + e_symbol_ordering.copy()
-        assert sorted(self._symbol_ordering) == sorted(symbols_from_transitions), "Ordering of symbols is incomplete"
+                filter(lambda s: s in F_SYMBOLS, symbols_from_instructions)) + e_symbol_ordering.copy()
+        assert sorted(self._symbol_ordering) == sorted(symbols_from_instructions), "Ordering of symbols is incomplete"
 
         if m_config_ordering is None:
-            # Default m-configuration ordering is as encountered in provided transitions
-            self._m_config_ordering = m_configs_from_transitons
+            # Default m-configuration ordering is as encountered in provided instructions
+            self._m_config_ordering = m_configs_from_instructions
         else:
             # If m-config ordering is specified, that is used
             self._m_config_ordering = m_config_ordering.copy()
         assert sorted(self._m_config_ordering) == sorted(
-            m_configs_from_transitons), "Ordering of m-configs is incomplete"
+            m_configs_from_instructions), "Ordering of m-configs is incomplete"
 
     @staticmethod
-    def dict_from_dn(dn: int,
-                     m_config_ordering: list = None, e_symbol_ordering: list = None, f_symbol_num: int = 2) -> TransitionsDict:
-        rule_numbers = str(dn).split(FORMAT_TRANSITION['DN'][-1])[:-1]
-        split_rule_numbers = [re.split('[3]', t.replace('5', '35'))[1:] for t in rule_numbers]
+    def dict_from_representation(instruction_rep: Union[int, str], representation: str,
+                                 m_config_ordering: list = None,
+                                 e_symbol_ordering: list = None, f_symbol_num: int = 2) -> InstructionsDict:
+
+        if isinstance(instruction_rep, int):
+            assert representation == 'DN'
+            instruction_rep = str(instruction_rep)
+
+        # TBD - Assert valid representation; at least check what symbols are in it.
 
         if not e_symbol_ordering:
-            e_symbol_ordering = list('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
+            e_symbol_ordering = E_SYMBOLS
         symbol_ordering = [E] + [str(f) for f in range(f_symbol_num)] + e_symbol_ordering.copy()
 
         if not m_config_ordering:
             m_config_fmt_fn = FORMAT_CHARS['tuples']['m_config_format_fn']
         else:
             m_config_fmt_fn = lambda i: m_config_ordering[i]
-        move_fmt = {FORMAT_CHARS['DN']['step_format_fn'](i): i for i in [N, R, L] }
+        move_fmt_fn = FORMAT_CHARS[representation]['step_format_fn']
+        move_fmt = {move_fmt_fn(i): i for i in [N, R, L] }
 
-        transition_dict = dict()
-        for i, split_rule in enumerate(split_rule_numbers):
+        # REV - Find a better way to split up and match each row of the table
+        delimiter = FORMAT_CHARS[representation]['symbol_format_fn'](0)
+        instructions = instruction_rep.split(FORMAT_INSTRUCTION[representation][-1])[:-1]
+        split_instructions = [re.split(delimiter,
+                                       t.replace(move_fmt_fn(N), delimiter+move_fmt_fn(N)).replace(move_fmt_fn(R), delimiter+move_fmt_fn(R)).replace(move_fmt_fn(L), delimiter+move_fmt_fn(L)))[1:]
+                              for t in instructions]
+
+        instructions_dict = dict()
+        for i, split_rule in enumerate(split_instructions):
             initial_m_config = m_config_fmt_fn(len(split_rule[0]) - 1)
             read_symbol = symbol_ordering[len(split_rule[1])]
             written_symbol = symbol_ordering[len(split_rule[2])]
             move = move_fmt[split_rule[3]]
             final_m_config = m_config_fmt_fn(len(split_rule[4]) - 1)
-            if not initial_m_config in transition_dict:
-                transition_dict[initial_m_config] = {}
-            transition_dict[initial_m_config][read_symbol] = Behavior([written_symbol, move], final_m_config,
-                                                                      rule_numbers[i])
+            if not initial_m_config in instructions_dict:
+                instructions_dict[initial_m_config] = {}
+            instructions_dict[initial_m_config][read_symbol] = Behavior([written_symbol, move], final_m_config,
+                                                                      instructions[i])
 
-        return deepcopy(transition_dict)
+        return deepcopy(instructions_dict)
 
     @property
-    def dict(self) -> TransitionsDict:
-        return self._transitions   # REV - Copy? <<<
+    def dict(self) -> InstructionsDict:
+        return self._instructions   # REV - Copy? <<<
 
     def behavior(self, m_config: MConfig, symbol: Symbol) -> Behavior:
         try:
-            self._transitions[m_config]
+            self._instructions[m_config]
         except KeyError:
             raise UnknownMConfig(m_config)
         try:
-            self._transitions[m_config][symbol]
+            self._instructions[m_config][symbol]
         except KeyError:
             raise UnknownSymbol(symbol)
-        return self._transitions[m_config][symbol]
+        return self._instructions[m_config][symbol]
 
     def _format_move(self, move: Step, representation: Representation) -> str:
         assert isinstance(move, Step)
@@ -322,7 +339,7 @@ class Transitions(object):
         symbol_indicies = {sym:pos for pos, sym in enumerate(self._symbol_ordering)}
         return FORMAT_CHARS[representation]['symbol_format_fn'](symbol_indicies[symbol])
 
-    def _format_transition(self, representation: Representation,
+    def _format_instruction(self, representation: Representation,
                            m_config_start: MConfig, m_config_end: MConfig,
                            scanned_symbol: Symbol, written_symbol: Symbol,
                            move: Step
@@ -334,55 +351,55 @@ class Transitions(object):
             'fmt_written_symbol': self._format_symbol(written_symbol, representation),
             'fmt_move': self._format_move(move, representation),
         }
-        return format(FORMAT_TRANSITION[representation].format(**fmt_elements))
+        return format(FORMAT_INSTRUCTION[representation].format(**fmt_elements))
 
     # TBD -- Tidy looping and names <<<
-    def _transitions_list(self, representation: Representation = None) -> list:
-        transition_representations = []
+    def _instructions_list(self, representation: Representation = None) -> list:
+        instructionn_representations = []
         if representation in ['SD', 'DN', 'tuples', 'wolfram']:
             assert self._is_standard_form
-            for m_config_start in self._transitions.keys():
-                for scanned_symbol in self._transitions[m_config_start].keys():
-                    #behavior = Behavior(*self._transitions[m_config_start][scanned_symbol])
-                    behavior = self._transitions[m_config_start][scanned_symbol]
+            for m_config_start in self._instructions.keys():
+                for scanned_symbol in self._instructions[m_config_start].keys():
+                    #behavior = Behavior(*self._instructions[m_config_start][scanned_symbol])
+                    behavior = self._instructions[m_config_start][scanned_symbol]
                     written_symbol = behavior.ops[0]
                     move = behavior.ops[1]
                     m_config_end = behavior.final_m_config
-                    transition_representations.append(self._format_transition(representation,
+                    instructionn_representations.append(self._format_instruction(representation,
                                                                               m_config_start, m_config_end,
                                                                               scanned_symbol, written_symbol,
                                                                               move))
-        # REV - This isn't really a list of representations; allow as list at all (move to transitions?) <<<
+        # REV - This isn't really a list of representations; allow as list at all (move to instructions?) <<<
         # REV - Must use spaces and not tabs; handle formatting better - https://github.com/aepsilon/turing-machine-viz/issues/6
         elif representation in ['YAML']:
             assert self._is_standard_form
-            transition_representations.append('table:')
-            for m_config_start in self._transitions.keys():
-                transition_representations.append('  {0}:'.format(m_config_start))
-                for scanned_symbol in self._transitions[m_config_start].keys():
-                    behavior = self._transitions[m_config_start][scanned_symbol]
+            instructionn_representations.append('table:')
+            for m_config_start in self._instructions.keys():
+                instructionn_representations.append('  {0}:'.format(m_config_start))
+                for scanned_symbol in self._instructions[m_config_start].keys():
+                    behavior = self._instructions[m_config_start][scanned_symbol]
                     written_symbol = behavior.ops[0]
                     move = behavior.ops[1]
                     m_config_end = behavior.final_m_config
-                    transition_representations.append("    \'{0}\': {{write: \'{1}\', {2}: {3}}}".format(
+                    instructionn_representations.append("    \'{0}\': {{write: \'{1}\', {2}: {3}}}".format(
                         scanned_symbol,
                         written_symbol,
                         self._format_move(move, representation),
                         m_config_end))
-        return transition_representations
+        return instructionn_representations
 
-    def transitions(self, representation: Representation = None, as_list: bool = False) -> Union[TransitionsDict, list, str]:
+    def instructions(self, representation: Representation = None, as_list: bool = False) -> Union[InstructionsDict, list, str]:
         if representation in ['SD', 'DN', 'tuples', 'YAML', 'wolfram']:
             if not self._is_standard_form:
                 raise NonStandardConfiguration(
-                    requirement="To represent as {}, transitions must be in standard form".format(representation))
+                    requirement="To represent as {}, instructions must be in standard form".format(representation))
             if not as_list:
                 return FORMAT_CHARS[representation]['table_begin'] + \
-                       self._format_seperator(representation).join(self._transitions_list(representation)) +\
+                       self._format_seperator(representation).join(self._instructions_list(representation)) +\
                        FORMAT_CHARS[representation]['table_end']
 
             else:
-                return self._transitions_list(representation)
+                return self._instructions_list(representation)
         else:
             return self.dict
 
@@ -391,7 +408,7 @@ class Transitions(object):
 
 class TuringMachine(object):
 
-    def __init__(self, initial_m_configuration: MConfig, transitions: Union[TransitionsDict, Transitions],
+    def __init__(self, initial_m_configuration: MConfig, instructions: Union[InstructionsDict, Instructions],
                  initial_tape: Union[Tape, str] = E, initial_position: int = 0,
                  *args, **kw):
 
@@ -406,10 +423,10 @@ class TuringMachine(object):
             self._dict_initial_tape[position] = symbol
         self._initial_m_configuration = initial_m_configuration
         # REV - Copy necessary?
-        if isinstance(transitions, Transitions):
-            self._transitions = deepcopy(transitions)
+        if isinstance(instructions, Instructions):
+            self._instructions = deepcopy(instructions)
         else:
-            self._transitions = Transitions(transitions)
+            self._instructions = Instructions(instructions)
         # TBD - Add ability to set other than defaults with optional arguments
         self._initial_position = initial_position
 
@@ -460,7 +477,7 @@ class TuringMachine(object):
 
     def step(self, debug: bool = False) -> None:
         try:
-            behavior = self._transitions.behavior(self._m_configuration, self._tape[self._position])
+            behavior = self._instructions.behavior(self._m_configuration, self._tape[self._position])
             for op in behavior.ops:
                 if isinstance(op, Step):
                     self._position += op
@@ -498,8 +515,8 @@ class TuringMachine(object):
             yield self
             step += 1
 
-    def transitions(self, representation: Representation = None, as_list: bool = False) -> Union[TransitionsDict, list, str]:
-        return self._transitions.transitions(representation, as_list)
+    def instructions(self, representation: Representation = None, as_list: bool = False) -> Union[InstructionsDict, list, str]:
+        return self._instructions.instructions(representation, as_list)
 
 
 # ======== Some errors
@@ -511,14 +528,14 @@ class TuringError(Exception):
 
 
 class UnknownSymbol(TuringError):
-    """An encountered symbol is not present in the recognized configurations in the transition table."""
+    """An encountered symbol is not present in the recognized configurations in the instruction table."""
 
     def __str__(self) -> str:
         return str('Unrecognized symbol: {0}'.format(self.bad_token))
 
 
 class UnknownMConfig(TuringError):
-    """An encountered m-configuration is not present in the recognized configurations in the transition table."""
+    """An encountered m-configuration is not present in the recognized configurations in the instruction table."""
 
     def __str__(self) -> str:
         return str('Unrecognized m-configuration: {0}'.format(self.bad_token))
