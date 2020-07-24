@@ -28,7 +28,8 @@ class Step(IntEnum):
 # class Representation(Enum):
 #     SD = 'SD'
 #     DN = 'DN'
-Representation = str
+InstructionFormat = str
+TableFormat = str
 
 # TBD - Rename <<<
 FORMAT_CHARS = {
@@ -97,6 +98,7 @@ _HIGHLIGHT_RESET = "\u001b[0m"
 
 
 # !!! - Definition of alternating machine puts a step where a symbol should be (or vice versa) Still true??
+# TBD - Fix _instructions_table so that it doesnt rely on lists, tidy _instructions_str now that it does not have to deal with tables <<<
 # TBD - Fix places where private functions are being used; tidy up properties <<<
 # TBD - Better differentate handling of representations that don't work as lists of instructions vs those that do <<<
 # TBD - Option to print blank differently <<<
@@ -167,7 +169,7 @@ _HIGHLIGHT_RESET = "\u001b[0m"
 InstructionsDict = Dict[MConfig, Dict[Union[Symbol, Tuple[Symbol]], Union[Behavior, tuple]]]
 
 
-class Instructions(object):
+class Table(object):
     def __init__(self, instructions: Union[InstructionsDict, int, str],
                  e_symbol_ordering: list = None, m_config_ordering: list = None,
                  add_no_op_instructions: bool = False,
@@ -271,7 +273,7 @@ class Instructions(object):
             m_configs_from_instructions), "Ordering of m-configs is incomplete"
 
     @staticmethod
-    def dict_from_representation(instruction_rep: Union[int, str], representation: str,
+    def dict_from_representation(instruction_rep: Union[int, str], representation: InstructionFormat,
                                  m_config_ordering: list = None,
                                  e_symbol_ordering: list = None, f_symbol_num: int = 2) -> InstructionsDict:
 
@@ -328,84 +330,107 @@ class Instructions(object):
             raise UnknownSymbol(symbol)
         return self._instructions[m_config][symbol]
 
-    def _format_move(self, move: Step, representation: Representation) -> str:
+    #@staticmethod
+    def _format_move(self, move: Step, representation: InstructionFormat) -> str:
         assert isinstance(move, Step)
         return FORMAT_CHARS[representation]['step_format_fn'](move)
 
-    def _format_seperator(self, representation: Representation) -> str:
+    #@staticmethod
+    def _format_seperator(self, representation: InstructionFormat) -> str:
         return FORMAT_CHARS[representation]['seperator']
 
-    def _format_m_configuration(self, m_config: MConfig, representation: Representation) -> str:
+    def _format_m_configuration(self, m_config: MConfig, representation: InstructionFormat) -> str:
         assert m_config in self._m_config_ordering
         m_config_indices = {m_cfg: pos for pos, m_cfg in enumerate(self._m_config_ordering)}
         return FORMAT_CHARS[representation]['m_config_format_fn'](m_config_indices[m_config])
 
-    def _format_symbol(self, symbol: Symbol, representation: Representation) -> str:
+    def _format_symbol(self, symbol: Symbol, representation: InstructionFormat) -> str:
         assert not isinstance(symbol, Step) and symbol in self._symbol_ordering
         symbol_indicies = {sym:pos for pos, sym in enumerate(self._symbol_ordering)}
         return FORMAT_CHARS[representation]['symbol_format_fn'](symbol_indicies[symbol])
 
-    def _format_instruction(self, representation: Representation,
-                           m_config_start: MConfig, m_config_end: MConfig,
-                           scanned_symbol: Symbol, written_symbol: Symbol,
-                           move: Step
-                           ) -> str:
+    def _format_instruction(self, instruction_format: InstructionFormat,
+                            m_config_start: MConfig, m_config_end: MConfig,
+                            scanned_symbol: Symbol, written_symbol: Symbol,
+                            move: Step
+                            ) -> str:
         fmt_elements = {
-            'fmt_m_config_start': self._format_m_configuration(m_config_start, representation),
-            'fmt_m_config_end': self._format_m_configuration(m_config_end, representation),
-            'fmt_scanned_symbol': self._format_symbol(scanned_symbol, representation),
-            'fmt_written_symbol': self._format_symbol(written_symbol, representation),
-            'fmt_move': self._format_move(move, representation),
+            'fmt_m_config_start': self._format_m_configuration(m_config_start, instruction_format),
+            'fmt_m_config_end': self._format_m_configuration(m_config_end, instruction_format),
+            'fmt_scanned_symbol': self._format_symbol(scanned_symbol, instruction_format),
+            'fmt_written_symbol': self._format_symbol(written_symbol, instruction_format),
+            'fmt_move': self._format_move(move, instruction_format),
         }
-        return format(FORMAT_INSTRUCTION[representation].format(**fmt_elements))
+        return FORMAT_INSTRUCTION[instruction_format].format(**fmt_elements)
 
     # TBD -- Tidy looping and names <<<
-    def _instructions_list(self, representation: Representation = None) -> list:
-        instructionn_representations = []
-        if representation in ['SD', 'DN', 'tuples', 'wolfram']:
+    def _instructions_list(self, instruction_format: InstructionFormat = None) -> list:
+        assert instruction_format in ['SD', 'DN', 'tuples', 'wolfram'], \
+            f"Not a listable instruction format: {instruction_format}"
+        instruction_representations = []
+        if instruction_format in ['SD', 'DN', 'tuples', 'wolfram']:
             assert self._is_standard_form
             for m_config_start in self._instructions.keys():
-                for scanned_symbol in self._instructions[m_config_start].keys():
-                    #behavior = Behavior(*self._instructions[m_config_start][scanned_symbol])
-                    behavior = self._instructions[m_config_start][scanned_symbol]
-                    written_symbol = behavior.ops[0]
-                    move = behavior.ops[1]
-                    m_config_end = behavior.final_m_config
-                    instructionn_representations.append(self._format_instruction(representation,
-                                                                              m_config_start, m_config_end,
-                                                                              scanned_symbol, written_symbol,
-                                                                              move))
-        # REV - This isn't really a list of representations; allow as list at all (move to instructions?) <<<
-        # REV - Must use spaces and not tabs; handle formatting better - https://github.com/aepsilon/turing-machine-viz/issues/6
-        elif representation in ['YAML']:
-            assert self._is_standard_form
-            instructionn_representations.append('table:')
-            for m_config_start in self._instructions.keys():
-                instructionn_representations.append('  {0}:'.format(m_config_start))
                 for scanned_symbol in self._instructions[m_config_start].keys():
                     behavior = self._instructions[m_config_start][scanned_symbol]
                     written_symbol = behavior.ops[0]
                     move = behavior.ops[1]
                     m_config_end = behavior.final_m_config
-                    instructionn_representations.append("    \'{0}\': {{write: \'{1}\', {2}: {3}}}".format(
+                    instruction_representations.append(self._format_instruction(instruction_format,
+                                                                                m_config_start, m_config_end,
+                                                                                scanned_symbol, written_symbol,
+                                                                                move))
+        return instruction_representations
+
+    def _instructions_str(self, instruction_format: InstructionFormat = None) -> str:
+        assert instruction_format in ['SD', 'DN', 'tuples', 'wolfram'], \
+            f"Instruction format cannot be represented as a string: {instruction_format}"
+        return (FORMAT_CHARS[instruction_format]['table_begin'] +
+                self._format_seperator(instruction_format).join(self._instructions_list(instruction_format)) +
+                FORMAT_CHARS[instruction_format]['table_end'])
+
+    # REV - This isn't really a list of representations; allow as list at all (move to instructions?) <<<
+    # REV - Must use spaces and not tabs; handle formatting better - https://github.com/aepsilon/turing-machine-viz/issues/6
+    def _instructions_table(self, instruction_format: InstructionFormat = None) -> str:
+        instruction_representations = []
+        if instruction_format in ['YAML']:
+            assert self._is_standard_form
+            instruction_representations.append('table:')
+            for m_config_start in self._instructions.keys():
+                instruction_representations.append('  {0}:'.format(m_config_start))
+                for scanned_symbol in self._instructions[m_config_start].keys():
+                    behavior = self._instructions[m_config_start][scanned_symbol]
+                    written_symbol = behavior.ops[0]
+                    move = behavior.ops[1]
+                    m_config_end = behavior.final_m_config
+                    instruction_representations.append("    \'{0}\': {{write: \'{1}\', {2}: {3}}}".format(
                         scanned_symbol,
                         written_symbol,
-                        self._format_move(move, representation),
+                        self._format_move(move, instruction_format),
                         m_config_end))
-        return instructionn_representations
+        return FORMAT_CHARS[instruction_format]['table_begin'] + \
+                       self._format_seperator(instruction_format).join(instruction_representations) + \
+                       FORMAT_CHARS[instruction_format]['table_end']
 
-    def instructions(self, representation: Representation = None, as_list: bool = False) -> Union[InstructionsDict, list, str]:
-        if representation in ['SD', 'DN', 'tuples', 'YAML', 'wolfram']:
+    def instructions(self, instruction_format: InstructionFormat = None, table_format: TableFormat = None) -> Union[InstructionsDict, list, str]:
+        # !!! - Why wont the rest of this test work? <<<
+        if (instruction_format == 'YAML' or table_format == 'YAML'): #and (instruction_format is None or table_format is None):
+            instruction_format = 'YAML'
+            table_format = 'YAML'
+
+        if instruction_format in ['SD', 'DN', 'tuples', 'YAML', 'wolfram']:
             if not self._is_standard_form:
                 raise NonStandardConfiguration(
-                    requirement="To represent as {}, instructions must be in standard form".format(representation))
-            if not as_list:
-                return FORMAT_CHARS[representation]['table_begin'] + \
-                       self._format_seperator(representation).join(self._instructions_list(representation)) +\
-                       FORMAT_CHARS[representation]['table_end']
-
+                    requirement="To represent instructions as {}, they must be in standard form".format(instruction_format))
+            if instruction_format not in ['SD', 'DN', 'tuples', 'wolfram'] and table_format in ['string', 'list']:
+                raise NonListableTableFormat(
+                    requirement="To represent table as {}, instruction format must be listable ({}) is not listable".format(table_format, instruction_format))
+            if table_format == 'string':
+                return self._instructions_str(instruction_format)
+            if table_format in ['table', 'YAML']:
+                return self._instructions_table(instruction_format)
             else:
-                return self._instructions_list(representation)
+                return self._instructions_list(instruction_format)
         else:
             return self.dict
 
@@ -414,7 +439,7 @@ class Instructions(object):
 
 class TuringMachine(object):
 
-    def __init__(self, initial_m_configuration: MConfig, instructions: Union[InstructionsDict, Instructions],
+    def __init__(self, initial_m_configuration: MConfig, instructions: Union[InstructionsDict, Table],
                  initial_tape: Union[Tape, str] = E, initial_position: int = 0,
                  *args, **kw):
 
@@ -429,10 +454,10 @@ class TuringMachine(object):
             self._dict_initial_tape[position] = symbol
         self._initial_m_configuration = initial_m_configuration
         # REV - Copy necessary?
-        if isinstance(instructions, Instructions):
-            self._instructions = deepcopy(instructions)
+        if isinstance(instructions, Table):
+            self._table = deepcopy(instructions)
         else:
-            self._instructions = Instructions(instructions)
+            self._table = Table(instructions)
         # TBD - Add ability to set other than defaults with optional arguments
         self._initial_position = initial_position
 
@@ -472,6 +497,9 @@ class TuringMachine(object):
     def str_complete_configuration(self) -> str:
         return ''.join([str(elem) for elem in self.complete_configuration()])
 
+    def instructions(self, instruction_format: InstructionFormat = None, table_format: str = 'string') -> Union[InstructionsDict, list, str]:
+        return self._table.instructions(instruction_format, table_format)
+
     # TBD - Expand with decoration, highlight, arguments
     # TBD - Pull higlighting out into own utility function
     def display_text(self) -> str:
@@ -483,7 +511,7 @@ class TuringMachine(object):
 
     def step(self, debug: bool = False) -> None:
         try:
-            behavior = self._instructions.behavior(self._m_configuration, self._tape[self._position])
+            behavior = self._table.behavior(self._m_configuration, self._tape[self._position])
             for op in behavior.ops:
                 if isinstance(op, Step):
                     self._position += op
@@ -521,9 +549,6 @@ class TuringMachine(object):
             yield self
             step += 1
 
-    def instructions(self, representation: Representation = None, as_list: bool = False) -> Union[InstructionsDict, list, str]:
-        return self._instructions.instructions(representation, as_list)
-
 
 # ======== Some errors
 
@@ -559,3 +584,10 @@ class NonStandardConfiguration(TuringError):
 
     def __str__(self) -> str:
         return str('Machine specification not in standard form: {0}'.format(self.requirement))
+
+
+class NonListableTableFormat(TuringError):
+    """A non-listable table format requested as a list."""
+
+    def __str__(self) -> str:
+        return str('Requested table format is not listable: {0}'.format(self.requirement))
