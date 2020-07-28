@@ -98,6 +98,7 @@ _HIGHLIGHT_RESET = "\u001b[0m"
 
 # TBD - Isolate messy instructions for parsing in Instructions class. Same with tape. Deal with encoding stuff better. <<<
 # !!! - Definition of alternating machine puts a step where a symbol should be (or vice versa) Still true??
+# TBD - Fix utils.print_over to handle overwritting of variable number of lines <<<
 # TBD - Fix _instructions_table so that it doesn't rely on lists, tidy _instructions_str now that it does not have to deal with tables <<<
 # TBD - Fix places where private functions are being used; tidy up properties <<<
 # TBD - Better differentate handling of representations that don't work as lists of instructions vs those that do <<<

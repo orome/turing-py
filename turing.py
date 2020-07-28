@@ -11,23 +11,8 @@ Description
 import argparse
 from typing import List
 from sys import exit
-#from test import increasing  # TBD - MOVE <<<
-import sys
-import time
 
-# TBD - Move to static class utilities <<<
-def print_over(s, backup: bool = True, delay: float = 0.2) -> None:
-    if backup:
-        print('', end='\r')
-        print("\033[F" * (s.count('\n')+2))
-    print(s)
-    sys.stdout.flush()
-    time.sleep(delay)
-
-# TBD - MOVE <<<
-
-
-
+from utils import *
 # from crypto_enigma import __version__
 from machine import *
 
@@ -273,7 +258,6 @@ if __name__ == '__main__':
                 c = f" {q.step_comment}"  if args.comment else ''
                 # TBD - Pad to length of previoius to ensure overwrite! <<<
                 print_over(q.display_text() + s + c, backup=args.overwrite, delay=(d if d > 0 else 0.01))
-            print(args.mconfig)
         else:
             print(f"Command not implemented: {args.command}")
     except KeyboardInterrupt as e:

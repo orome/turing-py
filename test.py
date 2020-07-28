@@ -2,20 +2,9 @@
 # encoding: utf8
 
 from machine import TuringMachine, Table, R, L, N, E, Behavior
+from utils import *
 
 
-import sys
-import time
-
-
-# TBD - Move to static class utilities <<<
-def print_over(s, backup: bool = True, delay: float = 0.2) -> None:
-    if backup:
-        print('', end='\r')
-        print("\033[F" * (s.count('\n')+2))
-    print(s)
-    sys.stdout.flush()
-    time.sleep(delay)
 
 
 # ======== Some basic machine definitions
@@ -255,12 +244,6 @@ print(TuringMachine('b', Table.dict_from_representation(sd, 'SD')).instructions(
 print(TuringMachine('b', Table.dict_from_representation(sd, 'SD')).instructions('SD'))
 print(TuringMachine('b', Table(Table.dict_from_representation(sd, 'SD'),
                                add_no_op_instructions=True)).instructions('wolfram'))
-dn = 31332531173113353111731113322531111731111335317
-sd = "DADDCRDAAXDAADDRDAAAXDAAADDCCRDAAAAXDAAAADDRDAX"
-print(Table.dict_from_representation(dn, 'DN'))
-print(Table.dict_from_representation(sd, 'SD'))
-for q in TuringMachine('b', Table.dict_from_representation(dn, 'DN'), initial_tape=' ').steps(1000):
-    print_over(q.display_text(), backup=True, delay=0.005)
 
 print("\n--------- YAML for alternating 1s and 0s, with blanks (for https://turingmachine.io)")
 
