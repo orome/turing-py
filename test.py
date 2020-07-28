@@ -1,4 +1,7 @@
-from turing import TuringMachine, Table, R, L, N, E, Behavior
+#!/usr/bin/env python
+# encoding: utf8
+
+from machine import TuringMachine, Table, R, L, N, E, Behavior
 
 
 import sys
@@ -224,7 +227,7 @@ print(alternate_machine_standard.instructions('tuples'))
 print("\n--------- List of standard form tuples for alternating 1s and 0s, with blanks")
 
 alternate_machine_standard = TuringMachine('b', alternate_standard, initial_tape=E)
-print(alternate_machine_standard.instructions('tuples', True))
+print(alternate_machine_standard.instructions('tuples', 'list'))
 
 print("\n--------- Wolfram TuringMachine rules for alternating 1s and 0s, with blanks")
 
@@ -252,6 +255,12 @@ print(TuringMachine('b', Table.dict_from_representation(sd, 'SD')).instructions(
 print(TuringMachine('b', Table.dict_from_representation(sd, 'SD')).instructions('SD'))
 print(TuringMachine('b', Table(Table.dict_from_representation(sd, 'SD'),
                                add_no_op_instructions=True)).instructions('wolfram'))
+dn = 31332531173113353111731113322531111731111335317
+sd = "DADDCRDAAXDAADDRDAAAXDAAADDCCRDAAAAXDAAAADDRDAX"
+print(Table.dict_from_representation(dn, 'DN'))
+print(Table.dict_from_representation(sd, 'SD'))
+for q in TuringMachine('b', Table.dict_from_representation(dn, 'DN'), initial_tape=' ').steps(1000):
+    print_over(q.display_text(), backup=True, delay=0.005)
 
 print("\n--------- YAML for alternating 1s and 0s, with blanks (for https://turingmachine.io)")
 
