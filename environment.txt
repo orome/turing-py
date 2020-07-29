@@ -1,0 +1,7 @@
+# Requirments for setting up the enviroment, distinct from requriemnts for code in project
+ipykernel
+ipython
+jupyter
+jupyterlab
+jupyterlab-git
+ipywidgets
