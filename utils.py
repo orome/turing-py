@@ -2,7 +2,8 @@
 import sys
 import time
 
-# TBD - Fix output handle overwritting of variable number of lines
+
+# TBD - Fix output handle overwriting of variable number of lines <<<
 def print_over(s, backup: bool = True, delay: float = 0.2) -> None:
     if backup:
         print('', end='\r')

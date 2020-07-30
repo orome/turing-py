@@ -23,6 +23,16 @@ class Step(IntEnum):
     R = +1
     N = 0
 
+    def __str__(self) -> str:
+        if self.value == L:
+            return 'L'
+        elif self.value == R:
+            return 'R'
+        elif self.value == N:
+            return 'N'
+        else:
+            return 'ZZZZ'
+
 
 # TBD - Make Enum; what is pythonic way do to this so arguments can be the string values? <<<
 # class Representation(Enum):
@@ -78,10 +88,15 @@ CompleteConfig = List[Union[Symbol, MConfig]]    # TBD - Limit to one MConfig?
 Operations =  List[Union[Step,Symbol]]
 
 # If the from of ops is [Symbol, Step] then the Behavior is in standard form.
+# TBD - Make class and move string method here <<<
 class Behavior(NamedTuple):
     ops: Operations
     final_m_config: MConfig
     comment: str = ""
+
+def str_behavior(behavior: Behavior) -> str:
+    # TBD - Fix to show blanks (quote strings), have chouce of arrows, add comment, and omit first arrow <<<
+    return '  →  {}  →  {}'.format(','.join([str(o) for o in behavior.ops]), behavior.final_m_config)
 
 E = ' '     # E for "empty"
 F_SYMBOLS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
@@ -92,9 +107,9 @@ R = Step.R
 N = Step.N
 
 # See for how these look on various platforms - https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit
-_HIGHLIGHT_SYMBOL = "\u001b[44m\u001b[37;1m"    # "\u001b[44m\u001b[36;1m"
-_HIGHLIGHT_M_CONFIG = "\u001b[44m\u001b[37;1m"  # "\u001b[43;1m\u001b[31;1m"
-_HIGHLIGHT_RESET = "\u001b[0m"
+_HIGHLIGHT_SYMBOL_FMT = "|{}|" # "\u001b[44m\u001b[37;1m{}\u001b[0m"  
+_HIGHLIGHT_M_CONFIG_FMT =  _HIGHLIGHT_SYMBOL_FMT  #  "\u001b[44m\u001b[37;1m{}\u001b[0m"
+_HIGHLIGHT_ANNOTATION_FMT = "{}"
 
 # TBD - Isolate messy instructions for parsing in Instructions class. Same with tape. Deal with encoding stuff better. <<<
 # !!! - Definition of alternating machine puts a step where a symbol should be (or vice versa) Still true??
@@ -468,12 +483,14 @@ class TuringMachine(object):
         self._tape = self._dict_initial_tape.copy()
         self._m_configuration = self._initial_m_configuration
         self._position = self._initial_position
+        self._step = 0
         self._step_comment = "Initial configuration"
 
     def reset(self) -> None:
         self._tape = self._dict_initial_tape.copy()
         self._m_configuration = self._initial_m_configuration
         self._position = self._initial_position
+        self._step = 0
         self._step_comment = "Initial configuration"
 
     @property
@@ -504,12 +521,33 @@ class TuringMachine(object):
 
     # TBD - Expand with decoration, highlight, arguments
     # TBD - Pull higlighting out into own utility function
-    def display_text(self) -> str:
-        tape = list(self.str_tape())
-        annotation = [' '] * len(tape)
-        tape[self._position] = _HIGHLIGHT_SYMBOL + tape[self._position] + _HIGHLIGHT_RESET
-        annotation[self._position] = _HIGHLIGHT_M_CONFIG + self._m_configuration + _HIGHLIGHT_RESET
-        return ''.join(tape) + '\n' + ''.join(annotation)
+    def display_text(self, 
+                     show_step: bool = False, step_pad: tuple = (10, '0'),
+                     symbol_highlight: str = None, m_config_highlight: str = None, annotations_highlight: str = None
+                     ) -> str:
+        if symbol_highlight is None and m_config_highlight is None:
+            symbol_highlight = _HIGHLIGHT_SYMBOL_FMT
+            m_config_highlight = _HIGHLIGHT_M_CONFIG_FMT
+        else:
+            symbol_highlight = m_config_highlight if symbol_highlight is None else symbol_highlight
+            m_config_highlight = symbol_highlight if m_config_highlight is None else m_config_highlight
+        if annotations_highlight is None:
+            annotations_highlight = _HIGHLIGHT_ANNOTATION_FMT
+
+        tape_txt = list(self.str_tape())
+        #m_config_txt = [' '] * len(tape_txt)
+        tape_txt[self._position] = symbol_highlight.format(tape_txt[self._position])
+        #m_config_txt[self._position] = m_config_highlight.format(self._m_configuration)
+
+        # TBD - Fix to handle no rule <<<
+        rule_txt = annotations_highlight.format(
+            str_behavior(self._table.behavior(self._m_configuration, self._tape[self._position])))
+
+        m_config_txt = '_' * self._position + m_config_highlight.format(self._m_configuration) + rule_txt
+        display_lines = [''.join(tape_txt), ''.join(m_config_txt)]
+        if show_step:
+            display_lines.insert(0, annotations_highlight.format(str(self._step).rjust(*step_pad)))
+        return '\n'.join(display_lines)
 
     def step(self, debug: bool = False) -> None:
         try:
@@ -521,6 +559,7 @@ class TuringMachine(object):
                     self._tape[self._position] = op
             self._m_configuration = behavior.final_m_config
             self._step_comment = behavior.comment
+            self._step += 1
         except (UnknownMConfig, UnknownSymbol) as e:
             if debug:
                 raise e
