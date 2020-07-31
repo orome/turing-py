@@ -13,9 +13,9 @@ from __future__ import annotations
 import collections
 import re
 from typing import List, Dict, Union, Tuple, NamedTuple, Generator
-from enum import IntEnum, Enum
+from enum import IntEnum
 from copy import deepcopy
-from sys import exit
+# from sys import exit
 
 
 class Step(IntEnum):
@@ -25,6 +25,7 @@ class Step(IntEnum):
 
     def __str__(self) -> str:
         return {N: 'N', R: 'R', L: 'L'}[self]
+
 
 L = Step.L
 R = Step.R
@@ -43,45 +44,46 @@ FORMAT_CHARS = {
         {'symbol_format_fn': lambda i: 'D' + i*'C',
          'm_config_format_fn': lambda i: 'D' + (i + 1)*'A',
          'step_format_fn': lambda i: {Step.N: 'N', Step.R: 'R', Step.L: 'L'}[i],
-         'seperator': '', 'table_begin': '', 'table_end': ''},
+         'separator': '', 'table_begin': '', 'table_end': ''},
     'DN':
         {'symbol_format_fn': lambda i: '3' + i * '2',
          'm_config_format_fn': lambda i: '3' + (i + 1) * '1',
          'step_format_fn': lambda i: {Step.N: '6', Step.R: '5', Step.L: '4'}[i],
-         'seperator': '', 'table_begin': '', 'table_end': ''},
-    'tuples':   # REV - Chage to 'tuple' ?
+         'separator': '', 'table_begin': '', 'table_end': ''},
+    'tuples':   # REV - Change to 'tuple' ?
         {'symbol_format_fn': lambda i: 'S' + str(i),
          'm_config_format_fn': lambda i: 'q' + str(i + 1),
          'step_format_fn': lambda i: {Step.N: 'N', Step.R: 'R', Step.L: 'L'}[i],
-         'seperator': '', 'table_begin': '', 'table_end': ''},
+         'separator': '', 'table_begin': '', 'table_end': ''},
     'wolfram':
         {'symbol_format_fn': lambda i: str(i),
          'm_config_format_fn': lambda i: str(i + 1),
          'step_format_fn': lambda i: i,
-         'seperator': ', ', 'table_begin': '{ ', 'table_end': ' }'},
+         'separator': ', ', 'table_begin': '{ ', 'table_end': ' }'},
     'YAML':
         {'step_format_fn': lambda i: {Step.N: 'N', Step.R: 'R', Step.L: 'L'}[i],
-         'seperator': '\n', 'table_begin': '', 'table_end': ''}
+         'separator': '\n', 'table_begin': '', 'table_end': ''}
 }
 
 FORMAT_INSTRUCTION = {
     'SD': "{fmt_m_config_start}{fmt_scanned_symbol}{fmt_written_symbol}{fmt_move}{fmt_m_config_end};",
     'DN': "{fmt_m_config_start}{fmt_scanned_symbol}{fmt_written_symbol}{fmt_move}{fmt_m_config_end}7",
-    'tuples':"{fmt_m_config_start}{fmt_scanned_symbol}{fmt_written_symbol}{fmt_move}{fmt_m_config_end};",
+    'tuples': "{fmt_m_config_start}{fmt_scanned_symbol}{fmt_written_symbol}{fmt_move}{fmt_m_config_end};",
     'wolfram': "{{{fmt_m_config_start},  {fmt_scanned_symbol}}} ->  {{{fmt_m_config_end},  {fmt_written_symbol}, {fmt_move}}}"
 }
 
 
 # TBD - Improve format documentation
 # symbols are one char
-# m-configs are strings (though some repreentations will be hard to read with m-configs longer than one character
-# valid m-configs and sybols are those (inferred) from instructions
+# m-configs are strings (though some representations will be hard to read with m-configs longer than one character
+# valid m-configs and symbols are those (inferred) from instructions
 # simply makes no change to the complete configuration if no matching rule is found (unless debugging)
 Symbol = chr
 MConfig = str
 Tape = List[Symbol]
 CompleteConfig = List[Union[Symbol, MConfig]]    # TBD - Limit to one MConfig?
-Operations =  List[Union[Step,Symbol]]
+Operations = List[Union[Step, Symbol]]
+
 
 # If the from of ops is [Symbol, Step] then the Behavior is in standard form.
 # TBD - Make class and move string method here <<<
@@ -92,7 +94,7 @@ class Behavior(NamedTuple):
 
     @staticmethod
     def str_behavior(behavior: Behavior, show_comment: bool = False) -> str:
-        # TBD - Fix to show blanks (quote strings), have chouce of arrows, add comment, and omit first arrow <<<
+        # TBD - Fix to show blanks (quote strings), have choice of arrows, add comment, and omit first arrow <<<
         ops = behavior.ops if len(behavior.ops) > 0 else [N]
         operations = '?' if behavior is None else ','.join(
             [str(o) if isinstance(o, Step) else _HIGHLIGHT_WRITTEN_FMT.format(o) for o in ops])
@@ -104,22 +106,23 @@ class Behavior(NamedTuple):
     def __str__(self) -> str:
         return Behavior.str_behavior(self)
 
+
 E = ' '     # E for "empty"
 F_SYMBOLS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 E_SYMBOLS = list('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
 # See for how these look on various platforms - https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit
-_HIGHLIGHT_SYMBOL_FMT = "|{}|" # "\u001b[44m\u001b[37;1m{}\u001b[0m"  
-_HIGHLIGHT_M_CONFIG_FMT =  _HIGHLIGHT_SYMBOL_FMT  #  "\u001b[44m\u001b[37;1m{}\u001b[0m"
+_HIGHLIGHT_SYMBOL_FMT = "|{}|"  # "\u001b[44m\u001b[37;1m{}\u001b[0m"
+_HIGHLIGHT_M_CONFIG_FMT = _HIGHLIGHT_SYMBOL_FMT   # "\u001b[44m\u001b[37;1m{}\u001b[0m"
 _HIGHLIGHT_ANNOTATION_FMT = "{}"
 _HIGHLIGHT_WRITTEN_FMT = "\u001b[4m{}\u001b[24m"
 
 # TBD - Isolate messy instructions for parsing in Instructions class. Same with tape. Deal with encoding stuff better. <<<
 # !!! - Definition of alternating machine puts a step where a symbol should be (or vice versa) Still true??
-# TBD - Fix utils.print_over to handle overwritting of variable number of lines <<<
+# TBD - Fix utils.print_over to handle overwriting of variable number of lines <<<
 # TBD - Fix _instructions_table so that it doesn't rely on lists, tidy _instructions_str now that it does not have to deal with tables <<<
 # TBD - Fix places where private functions are being used; tidy up properties <<<
-# TBD - Better differentate handling of representations that don't work as lists of instructions vs those that do <<<
+# TBD - Better differentiate handling of representations that don't work as lists of instructions vs those that do <<<
 # TBD - Option to print blank differently <<<
 # TBD - Representation as table (in various ways) <<<
 # TBD - Handle tape representations in parallel with instructions; make sure formatting defs are in the right place <<<
@@ -128,21 +131,21 @@ _HIGHLIGHT_WRITTEN_FMT = "\u001b[4m{}\u001b[24m"
 # TBD - Convert instructions to standard form <<<
 # TBD - Add list of manipulations/transformations (add no ops, explicit match, etc.) as args to Transitions constructor <<<
 # !!! - Fix no op writes in no op operations; see how this is done in Turing <<<
-# TBD - Where add_no_op_instructions is handled, set a property; check where required true (e.g. wolfram representaiton) <<<
+# TBD - Where add_no_op_instructions is handled, set a property; check where required true (e.g. wolfram representation) <<<
 # TBD - Import turingmachine.io format <<<
 # TBD - Import Wolfram format <<<
 # REV - Decide whether to handle tuples and leave the provided dict unchanged
-# TBD - Fix adding no op instructions to use explicit_configs and to handle entirly missing initial_m_comfig <<<
+# TBD - Fix adding no op instructions to use explicit_configs and to handle entirely missing initial_m_config <<<
 # TBD - Enforce / check standard form <<<
 # TBD - Implement _is_long_moves and handle in display
 # TBD - Add unit tests and reorganize tests (use example from Enigma project) <<<
 # TBD - Better formatting of comments with tape/config; as new output form or option to str_ functions in class <<<
 # TBD - Expand display_text() with decoration, highlight, arguments, comment on additional line, long state name, etc.
-# TBD - Pull highlighting out into seperate utility <<<
+# TBD - Pull highlighting out into separate utility <<<
 # TBD - Reorganize tape as function like instructions, with various representations <<<
-# TBD - Add tabular formats for transisions <<<
+# TBD - Add tabular formats for transitions <<<
 # TBD - Save entire previous behavior (not just self._step_comment); use in new display (e.g. tuple for last used rule)
-# TBD - Redo formatting for symbols, etc, to be more genaral
+# TBD - Redo formatting for symbols, etc, to be more general
 # TBD - Use representations (e.g. SD encoding) for tape and complete configurations as well
 # TBD - Add better handling (detection and marking?) of display for multi character m-configurations
 # TBD - Grow left; fix mishandling of blank on left (see test)
@@ -160,7 +163,7 @@ _HIGHLIGHT_WRITTEN_FMT = "\u001b[4m{}\u001b[24m"
 #       Universal Turing Machine: https://link.springer.com/content/pdf/bbm%3A978-1-84882-555-0%2F1.pdf
 #       Square root of 2 program (and accuracy test) - https://www.math.utah.edu/~pa/math/q1.html
 #       Implement representations on pp 146 and 148 <<<
-# TBD - Change handling of YAML to generalte JSON (listable?) and then convert to YAML for non list output
+# TBD - Change handling of YAML to generate JSON (listable?) and then convert to YAML for non list output
 # TBD - Support dict_from_representation for YAML/JSON and wolfram (assert no long moves)
 # TBD - CLI
 # TBD - Graphic/matplotlib version of display_text
@@ -172,10 +175,9 @@ _HIGHLIGHT_WRITTEN_FMT = "\u001b[4m{}\u001b[24m"
 #       Ask on SE, add her and in Automata doc <<<
 #       Use terms above in names and docs
 # REV - Copy arguments provided as lists (e.g. symbol_ordering)
-# REV - Add support for lists of m_configurations of  "else"/"any"/"all"; for now must explictly list
+# REV - Add support for lists of m_configurations of  "else"/"any"/"all"; for now must explicitly list
 # REV - Force ints to chrs in creating processed instructions?
 # REV - Allow providing of alternate single symbol m-mconfig (for some presentations)?
-
 
 
 # instructionsDict are dictionaries of the form
@@ -208,7 +210,7 @@ class Table(object):
         # REV - Decide whether to handle tuples and leave the provided dict unchanged <<<
         self._is_single_symbol_match = True
         # This optionally enforced below, or may change on examination
-        self._is_explcit_configs = True
+        self._is_explicit_configs = True
         # TBD - Implement <<<
         self._is_long_moves = False
 
@@ -229,9 +231,9 @@ class Table(object):
                 ops = behavior.ops
 
                 self._is_one_write_max = (self._is_one_write_max and
-                                          (sum(map(lambda op: not isinstance(op, Step), ops)) == 0 or
-                                          (sum(map(lambda op: not isinstance(op, Step), ops)) == 1 and
-                                           not isinstance(ops[0], Step))) )
+                                          (sum(map(lambda o: not isinstance(o, Step), ops)) == 0 or
+                                          (sum(map(lambda o: not isinstance(o, Step), ops)) == 1 and
+                                           not isinstance(ops[0], Step))))
                 self._is_explicit_write = (self._is_explicit_write and
                                            len(ops) != 0 and not isinstance(ops[0], Step))
 
@@ -257,7 +259,7 @@ class Table(object):
         # !!! - Must be in standard form to work <<<
         # Add any missing no-op rules and expand empty ones (e.g. required for valid Wolfram TuringMachine)
 
-        # TBD - Fix to use _is_explcit_configs and to handle entirly missing initial_m_comfig <<<
+        # TBD - Fix to use _is_explicit_configs and to handle entirely missing initial_m_config <<<
         if add_no_op_instructions:
             for m_config in processed_instructions.keys():
                 for sym in symbols_from_instructions:
@@ -266,9 +268,9 @@ class Table(object):
                     # TBD - Pythonic way to change just one of the named parameters
                     elif not processed_instructions[m_config][sym].ops:
                         processed_instructions[m_config][sym] = Behavior([sym, N],
-                                                                        processed_instructions[m_config][
-                                                                            sym].final_m_config,
-                                                                        processed_instructions[m_config][sym].comment)
+                                                                         processed_instructions[
+                                                                             m_config][sym].final_m_config,
+                                                                         processed_instructions[m_config][sym].comment)
 
         # REV - Copy necessary?
         self._instructions = deepcopy(processed_instructions)
@@ -312,13 +314,15 @@ class Table(object):
         else:
             m_config_fmt_fn = lambda i: m_config_ordering[i]
         move_fmt_fn = FORMAT_CHARS[representation]['step_format_fn']
-        move_fmt = {move_fmt_fn(i): i for i in [N, R, L] }
+        move_fmt = {move_fmt_fn(i): i for i in [N, R, L]}
 
         # REV - Find a better way to split up and match each row of the table
         delimiter = FORMAT_CHARS[representation]['symbol_format_fn'](0)
         instructions = instruction_rep.split(FORMAT_INSTRUCTION[representation][-1])[:-1]
         split_instructions = [re.split(delimiter,
-                                       t.replace(move_fmt_fn(N), delimiter+move_fmt_fn(N)).replace(move_fmt_fn(R), delimiter+move_fmt_fn(R)).replace(move_fmt_fn(L), delimiter+move_fmt_fn(L)))[1:]
+                                       t.replace(move_fmt_fn(N), delimiter+move_fmt_fn(N)
+                                                 ).replace(move_fmt_fn(R), delimiter+move_fmt_fn(R)
+                                                           ).replace(move_fmt_fn(L), delimiter+move_fmt_fn(L)))[1:]
                               for t in instructions]
 
         instructions_dict = dict()
@@ -328,10 +332,10 @@ class Table(object):
             written_symbol = symbol_ordering[len(split_rule[2])]
             move = move_fmt[split_rule[3]]
             final_m_config = m_config_fmt_fn(len(split_rule[4]) - 1)
-            if not initial_m_config in instructions_dict:
+            if instructions_dict not in initial_m_config:
                 instructions_dict[initial_m_config] = {}
             instructions_dict[initial_m_config][read_symbol] = Behavior([written_symbol, move], final_m_config,
-                                                                      instructions[i])
+                                                                        instructions[i])
 
         return deepcopy(instructions_dict)
 
@@ -350,14 +354,14 @@ class Table(object):
             raise UnknownSymbol(symbol)
         return self._instructions[m_config][symbol]
 
-    #@staticmethod
+    # @staticmethod
     def _format_move(self, move: Step, representation: InstructionFormat) -> str:
         assert isinstance(move, Step)
         return FORMAT_CHARS[representation]['step_format_fn'](move)
 
-    #@staticmethod
-    def _format_seperator(self, representation: InstructionFormat) -> str:
-        return FORMAT_CHARS[representation]['seperator']
+    # @staticmethod
+    def _format_separator(self, representation: InstructionFormat) -> str:
+        return FORMAT_CHARS[representation]['separator']
 
     def _format_m_configuration(self, m_config: MConfig, representation: InstructionFormat) -> str:
         assert m_config in self._m_config_ordering
@@ -366,8 +370,8 @@ class Table(object):
 
     def _format_symbol(self, symbol: Symbol, representation: InstructionFormat) -> str:
         assert not isinstance(symbol, Step) and symbol in self._symbol_ordering
-        symbol_indicies = {sym:pos for pos, sym in enumerate(self._symbol_ordering)}
-        return FORMAT_CHARS[representation]['symbol_format_fn'](symbol_indicies[symbol])
+        symbol_indices = {sym: pos for pos, sym in enumerate(self._symbol_ordering)}
+        return FORMAT_CHARS[representation]['symbol_format_fn'](symbol_indices[symbol])
 
     def _format_instruction(self, instruction_format: InstructionFormat,
                             m_config_start: MConfig, m_config_end: MConfig,
@@ -406,11 +410,12 @@ class Table(object):
         assert instruction_format in ['SD', 'DN', 'tuples', 'wolfram'], \
             f"Instruction format cannot be represented as a string: {instruction_format}"
         return (FORMAT_CHARS[instruction_format]['table_begin'] +
-                self._format_seperator(instruction_format).join(self._instructions_list(instruction_format)) +
+                self._format_separator(instruction_format).join(self._instructions_list(instruction_format)) +
                 FORMAT_CHARS[instruction_format]['table_end'])
 
     # REV - This isn't really a list of representations; allow as list at all (move to instructions?) <<<
-    # REV - Must use spaces and not tabs; handle formatting better - https://github.com/aepsilon/turing-machine-viz/issues/6
+    # REV - Must use spaces and not tabs - https://github.com/aepsilon/turing-machine-viz/issues/6
+    # REV - Handle formatting better (read from file)
     def _instructions_table(self, instruction_format: InstructionFormat = None) -> str:
         instruction_representations = []
         if instruction_format in ['YAML']:
@@ -429,19 +434,21 @@ class Table(object):
                         self._format_move(move, instruction_format),
                         m_config_end))
         return FORMAT_CHARS[instruction_format]['table_begin'] + \
-                       self._format_seperator(instruction_format).join(instruction_representations) + \
-                       FORMAT_CHARS[instruction_format]['table_end']
+               self._format_separator(instruction_format).join(instruction_representations) + \
+               FORMAT_CHARS[instruction_format]['table_end']
 
-    def instructions(self, instruction_format: InstructionFormat = None, table_format: TableFormat = None) -> Union[InstructionsDict, list, str]:
+    def instructions(self, instruction_format: InstructionFormat = None,
+                     table_format: TableFormat = None) -> Union[InstructionsDict, list, str]:
         # !!! - Why wont the rest of this test work? <<<
-        if (instruction_format == 'YAML' or table_format == 'YAML'): #and (instruction_format is None or table_format is None):
+        if instruction_format == 'YAML' or table_format == 'YAML':
             instruction_format = 'YAML'
             table_format = 'YAML'
 
         if instruction_format in ['SD', 'DN', 'tuples', 'YAML', 'wolfram']:
             if not self._is_standard_form:
                 raise NonStandardConfiguration(
-                    requirement="To represent instructions as {}, they must be in standard form".format(instruction_format))
+                    requirement="To represent instructions as {}, they must be in standard form".format(
+                        instruction_format))
             if instruction_format not in ['SD', 'DN', 'tuples', 'wolfram'] and table_format in ['string', 'list']:
                 raise NonListableTableFormat(
                     requirement="To represent table as {}, instruction format must be listable ({}) is not listable".format(table_format, instruction_format))
@@ -469,7 +476,7 @@ class TuringMachine(object):
             initial_tape = list(initial_tape)
 
         # Store the Tape internally as a dict
-        self._dict_initial_tape = collections.defaultdict(lambda : E)
+        self._dict_initial_tape = collections.defaultdict(lambda: E)
         for position, symbol in enumerate(initial_tape):
             self._dict_initial_tape[position] = symbol
         self._initial_m_configuration = initial_m_configuration
@@ -482,7 +489,7 @@ class TuringMachine(object):
         self._initial_position = initial_position
 
         # TBD - Way to not have to repeat this (and avoid errors about setting outside of __init__?
-        #self.reset()
+        # self.reset()
         self._tape = self._dict_initial_tape.copy()
         self._m_configuration = self._initial_m_configuration
         self._position = self._initial_position
@@ -519,14 +526,15 @@ class TuringMachine(object):
     def str_complete_configuration(self) -> str:
         return ''.join([str(elem) for elem in self.complete_configuration()])
 
-    def instructions(self, instruction_format: InstructionFormat = None, table_format: str = 'string') -> Union[InstructionsDict, list, str]:
+    def instructions(self, instruction_format: InstructionFormat = None,
+                     table_format: str = 'string') -> Union[InstructionsDict, list, str]:
         return self._table.instructions(instruction_format, table_format)
 
     # TBD - Expand with decoration, highlight, arguments
-    # TBD - Pull higlighting out into own utility function
+    # TBD - Pull highlighting out into own utility function
     # Display a formatted version of the complete configuration, with optional highlighting and annotation
     def display_text(self, 
-                     show_step: bool = False, step_pad: tuple = (10, '0'),
+                     show_step: bool = False,  # step_pad: tuple = (10, '0'),
                      symbol_highlight: str = None, m_config_highlight: str = None, annotations_highlight: str = None,
                      show_behavior: bool = False, show_comments: bool = False,
                      ) -> str:
@@ -540,18 +548,18 @@ class TuringMachine(object):
             annotations_highlight = _HIGHLIGHT_ANNOTATION_FMT
 
         tape_txt = list(self.str_tape())
-        #m_config_txt = [' '] * len(tape_txt)
+        # m_config_txt = [' '] * len(tape_txt)
         tape_txt[self._position] = symbol_highlight.format(tape_txt[self._position])
-        #m_config_txt[self._position] = m_config_highlight.format(self._m_configuration)
+        # m_config_txt[self._position] = m_config_highlight.format(self._m_configuration)
 
         rule_txt = annotations_highlight.format(
             Behavior.str_behavior(self._table.behavior(self._m_configuration, self._tape[self._position]),
-                         show_comments)) if show_behavior else ''
+                                  show_comments)) if show_behavior else ''
 
         m_config_txt = ' ' * self._position + m_config_highlight.format(self._m_configuration) + rule_txt
         display_lines = [''.join(tape_txt), ''.join(m_config_txt)]
         if show_step:
-            #display_lines.insert(0, annotations_highlight.format(str(self._step).rjust(*step_pad)))
+            # display_lines.insert(0, annotations_highlight.format(str(self._step).rjust(*step_pad)))
             display_lines.insert(0, ' ' * self._position + annotations_highlight.format(str(self._step)))
         return '\n'.join(display_lines)
 
@@ -620,14 +628,14 @@ class UnknownMConfig(TuringError):
 
 
 class BadToken(TuringError):
-    """An m-confugration or symbol is not a single character or string of length 1."""
+    """An m-configuration or symbol is not a single character or string of length 1."""
 
     def __str__(self) -> str:
         return str('Invalid token: {0}'.format(self.bad_token))
 
 
 class NonStandardConfiguration(TuringError):
-    """An encountered machine specification is not present in full standard form (where requried)."""
+    """An encountered machine specification is not present in full standard form (where required)."""
 
     def __str__(self) -> str:
         return str('Machine specification not in standard form: {0}'.format(self.requirement))
