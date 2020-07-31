@@ -24,15 +24,11 @@ class Step(IntEnum):
     N = 0
 
     def __str__(self) -> str:
-        if self.value == L:
-            return 'L'
-        elif self.value == R:
-            return 'R'
-        elif self.value == N:
-            return 'N'
-        else:
-            return 'ZZZZ'
+        return {N: 'N', R: 'R', L: 'L'}[self]
 
+L = Step.L
+R = Step.R
+N = Step.N
 
 # TBD - Make Enum; what is pythonic way do to this so arguments can be the string values? <<<
 # class Representation(Enum):
@@ -94,22 +90,29 @@ class Behavior(NamedTuple):
     final_m_config: MConfig
     comment: str = ""
 
-def str_behavior(behavior: Behavior) -> str:
-    # TBD - Fix to show blanks (quote strings), have chouce of arrows, add comment, and omit first arrow <<<
-    return '  →  {}  →  {}'.format(','.join([str(o) for o in behavior.ops]), behavior.final_m_config)
+    @staticmethod
+    def str_behavior(behavior: Behavior, show_comment: bool = False) -> str:
+        # TBD - Fix to show blanks (quote strings), have chouce of arrows, add comment, and omit first arrow <<<
+        ops = behavior.ops if len(behavior.ops) > 0 else [N]
+        operations = '?' if behavior is None else ','.join(
+            [str(o) if isinstance(o, Step) else _HIGHLIGHT_WRITTEN_FMT.format(o) for o in ops])
+        next_m_cfg = '?' if behavior is None else behavior.final_m_config
+        comment = ('UNSPECIFIED' if behavior is None else
+                   f"({behavior.comment})" if show_comment and behavior.comment != '' else '')
+        return f"  →  {operations} | {next_m_cfg}  {comment}"
+
+    def __str__(self) -> str:
+        return Behavior.str_behavior(self)
 
 E = ' '     # E for "empty"
 F_SYMBOLS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 E_SYMBOLS = list('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
-L = Step.L
-R = Step.R
-N = Step.N
-
 # See for how these look on various platforms - https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit
 _HIGHLIGHT_SYMBOL_FMT = "|{}|" # "\u001b[44m\u001b[37;1m{}\u001b[0m"  
 _HIGHLIGHT_M_CONFIG_FMT =  _HIGHLIGHT_SYMBOL_FMT  #  "\u001b[44m\u001b[37;1m{}\u001b[0m"
 _HIGHLIGHT_ANNOTATION_FMT = "{}"
+_HIGHLIGHT_WRITTEN_FMT = "\u001b[4m{}\u001b[24m"
 
 # TBD - Isolate messy instructions for parsing in Instructions class. Same with tape. Deal with encoding stuff better. <<<
 # !!! - Definition of alternating machine puts a step where a symbol should be (or vice versa) Still true??
@@ -521,9 +524,11 @@ class TuringMachine(object):
 
     # TBD - Expand with decoration, highlight, arguments
     # TBD - Pull higlighting out into own utility function
+    # Display a formatted version of the complete configuration, with optional highlighting and annotation
     def display_text(self, 
                      show_step: bool = False, step_pad: tuple = (10, '0'),
-                     symbol_highlight: str = None, m_config_highlight: str = None, annotations_highlight: str = None
+                     symbol_highlight: str = None, m_config_highlight: str = None, annotations_highlight: str = None,
+                     show_behavior: bool = False, show_comments: bool = False,
                      ) -> str:
         if symbol_highlight is None and m_config_highlight is None:
             symbol_highlight = _HIGHLIGHT_SYMBOL_FMT
@@ -539,14 +544,15 @@ class TuringMachine(object):
         tape_txt[self._position] = symbol_highlight.format(tape_txt[self._position])
         #m_config_txt[self._position] = m_config_highlight.format(self._m_configuration)
 
-        # TBD - Fix to handle no rule <<<
         rule_txt = annotations_highlight.format(
-            str_behavior(self._table.behavior(self._m_configuration, self._tape[self._position])))
+            Behavior.str_behavior(self._table.behavior(self._m_configuration, self._tape[self._position]),
+                         show_comments)) if show_behavior else ''
 
-        m_config_txt = '_' * self._position + m_config_highlight.format(self._m_configuration) + rule_txt
+        m_config_txt = ' ' * self._position + m_config_highlight.format(self._m_configuration) + rule_txt
         display_lines = [''.join(tape_txt), ''.join(m_config_txt)]
         if show_step:
-            display_lines.insert(0, annotations_highlight.format(str(self._step).rjust(*step_pad)))
+            #display_lines.insert(0, annotations_highlight.format(str(self._step).rjust(*step_pad)))
+            display_lines.insert(0, ' ' * self._position + annotations_highlight.format(str(self._step)))
         return '\n'.join(display_lines)
 
     def step(self, debug: bool = False) -> None:
