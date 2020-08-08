@@ -16,12 +16,12 @@ mkvirtualenv --python=`which python3` automata
 
 ```bash
 [automata] python -m ipykernel install --user --name 'automata_env' --display-name 'automata (Python 3, venv)'
-[automata] jupyter labextension install @pyviz/jupyterlab_pyviz
 [automata] jupyter labextension install @jupyterlab/git
 [automata] jupyter labextension install @jupyterlab/toc
-[automata] jupyter serverextension enable --py jupyterlab_git
-[automata] jupyter nbextension enable --py widgetsnbextension --sys-prefix
 [automata] jupyter labextension install @jupyter-widgets/jupyterlab-manager
+[automata] jupyter serverextension enable --py jupyterlab_git
+[automata] jupyter labextension install @pyviz/jupyterlab_pyviz
+[automata] jupyter nbextension enable --py widgetsnbextension --sys-prefix
 [automata] jupyter labextension list
 ```
 
@@ -33,19 +33,21 @@ cd .../automata
 [automata] jupyter lab
 ```
 
-Optionally, before `jupyter lab`, update packages:
+Optionally (before `jupyter lab`), update packages:
 
 ```bash
 [automata] pip install -U -r environment.txt
 [automata] pip install -U -r requirements.txt
-[automata] jupyter labextension install @pyviz/jupyterlab_pyviz
-[automata] jupyter labextension install @jupyterlab/git
-[automata] jupyter labextension install @jupyterlab/toc
-[automata] jupyter serverextension enable --py jupyterlab_git
-[automata] jupyter nbextension enable --py widgetsnbextension --sys-prefix
-[automata] jupyter labextension install @jupyter-widgets/jupyterlab-manager
-[automata] jupyter labextension list
 ```
+
+and then either
+
+```bash
+[automata] jupyter lab build
+[automata] jupyter labextension list
+
+```
+or repeat the Jupyter `labextension install`, `serverextension enable`, and `nbextension enable` commands in [Setup](#Setup).
 
 ```bash
 [dataviz] pip list --outdated
