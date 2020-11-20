@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import collections
 import re
-from typing import List, Dict, Union, Tuple, NamedTuple, Generator
+from typing import Union, NamedTuple
 from enum import IntEnum
 from copy import deepcopy
 # from sys import exit
@@ -80,9 +80,9 @@ FORMAT_INSTRUCTION = {
 # simply makes no change to the complete configuration if no matching rule is found (unless debugging)
 Symbol = chr
 MConfig = str
-Tape = List[Symbol]
-CompleteConfig = List[Union[Symbol, MConfig]]    # TBD - Limit to one MConfig?
-Operations = List[Union[Step, Symbol]]
+Tape = list[Symbol]
+CompleteConfig = list[Union[Symbol, MConfig]]    # TBD - Limit to one MConfig?
+Operations = list[Union[Step, Symbol]]
 
 
 # If the from of ops is [Symbol, Step] then the Behavior is in standard form.
@@ -188,7 +188,7 @@ _HIGHLIGHT_WRITTEN_FMT = "\u001b[4m{}\u001b[24m"
 # character in the tuple. If all provided behaviors are in standard form, then self._is_standard_form == True.
 # REV - Allow Behavior to be alternately specified as just a tuple (coerced when used)
 
-InstructionsDict = Dict[MConfig, Dict[Union[Symbol, Tuple[Symbol]], Union[Behavior, tuple]]]
+InstructionsDict = dict[MConfig, dict[Union[Symbol, tuple[Symbol]], Union[Behavior, tuple]]]
 
 
 class Table(object):
@@ -580,7 +580,7 @@ class TuringMachine(object):
 
     # Sequential states of the machine, starting with the current state and leaving the machine in the last state
     def steps(self, steps: int = None, include_current: bool = True, reset: bool = True, extend: bool = False,
-              auto_halt: bool = False, debug: bool = False) -> Generator[TuringMachine, None, None]:
+              auto_halt: bool = False, debug: bool = False) -> generator[TuringMachine, None, None]:
         if extend:
             reset = False
             include_current = False

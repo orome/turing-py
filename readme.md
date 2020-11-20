@@ -1,6 +1,6 @@
 ## Data visualization scratch
 
-A project for incubating and tempating basic data visualization and wrangling using Python 3.8.
+A project for incubating and tempating basic data visualization and wrangling using Python 3.9.
 
 ### Setup
 
