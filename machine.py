@@ -99,7 +99,7 @@ class Behavior(NamedTuple):
         operations = '?' if behavior is None else ','.join(
             [str(o) if isinstance(o, Step) else _HIGHLIGHT_WRITTEN_FMT.format(o) for o in ops])
         next_m_cfg = '?' if behavior is None else behavior.final_m_config
-        comment = ('UNSPECIFIED' if behavior is None else
+        comment = ('(Unspecified)' if behavior is None else
                    f"({behavior.comment})" if show_comment and behavior.comment != '' else '')
         return f"  →  {operations} | {next_m_cfg}  {comment}"
 

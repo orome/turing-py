@@ -220,7 +220,7 @@ print(alternate_machine_standard.instructions('tuples', 'list'))
 
 print("\n--------- Wolfram TuringMachine rules for alternating 1s and 0s, with blanks")
 
-alternate_standard_w_noop =Table(alternate_standard, add_no_op_instructions=True)
+alternate_standard_w_noop = Table(alternate_standard, add_no_op_instructions=True)
 alternate_machine_standard = TuringMachine('b', alternate_standard_w_noop, initial_tape=E)
 print(alternate_machine_standard.instructions('wolfram'))
 
