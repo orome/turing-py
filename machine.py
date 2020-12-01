@@ -95,7 +95,7 @@ class Behavior(NamedTuple):
     @staticmethod
     def str_behavior(behavior: Behavior, show_comment: bool = False) -> str:
         # TBD - Fix to show blanks (quote strings), have choice of arrows, add comment, and omit first arrow <<<
-        ops = behavior.ops if len(behavior.ops) > 0 else [N]
+        ops = '' if behavior is None else behavior.ops if len(behavior.ops) > 0 else [N]
         operations = '?' if behavior is None else ','.join(
             [str(o) if isinstance(o, Step) else _HIGHLIGHT_WRITTEN_FMT.format(o) for o in ops])
         next_m_cfg = '?' if behavior is None else behavior.final_m_config
@@ -332,7 +332,7 @@ class Table(object):
             written_symbol = symbol_ordering[len(split_rule[2])]
             move = move_fmt[split_rule[3]]
             final_m_config = m_config_fmt_fn(len(split_rule[4]) - 1)
-            if instructions_dict not in initial_m_config:
+            if initial_m_config not in instructions_dict:
                 instructions_dict[initial_m_config] = {}
             instructions_dict[initial_m_config][read_symbol] = Behavior([written_symbol, move], final_m_config,
                                                                         instructions[i])
@@ -552,10 +552,14 @@ class TuringMachine(object):
         tape_txt[self._position] = symbol_highlight.format(tape_txt[self._position])
         # m_config_txt[self._position] = m_config_highlight.format(self._m_configuration)
 
-        rule_txt = annotations_highlight.format(
-            Behavior.str_behavior(self._table.behavior(self._m_configuration, self._tape[self._position]),
-                                  show_comments)) if show_behavior else ''
-
+        
+        step_behavior = None
+        try:
+            step_behavior = self._table.behavior(self._m_configuration, self._tape[self._position])           
+        except (UnknownMConfig, UnknownSymbol):
+            pass
+        
+        rule_txt = annotations_highlight.format(Behavior.str_behavior(step_behavior, show_comments)) if show_behavior else ''
         m_config_txt = ' ' * self._position + m_config_highlight.format(self._m_configuration) + rule_txt
         display_lines = [''.join(tape_txt), ''.join(m_config_txt)]
         if show_step:
