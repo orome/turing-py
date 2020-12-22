@@ -19,8 +19,9 @@ mkvirtualenv --python=`which python3` automata
 [automata] jupyter labextension install @jupyterlab/git
 [automata] jupyter labextension install @jupyterlab/toc
 [automata] jupyter labextension install @jupyter-widgets/jupyterlab-manager
-[automata] jupyter serverextension enable --py jupyterlab_git
 [automata] jupyter labextension install @pyviz/jupyterlab_pyviz
+[automata] jupyter labextension install @kiteco/jupyterlab-kite
+[automata] jupyter serverextension enable --py jupyterlab_git
 [automata] jupyter nbextension enable --py widgetsnbextension --sys-prefix
 [automata] jupyter labextension list
 ```
@@ -50,7 +51,7 @@ and then either
 or repeat the Jupyter `labextension install`, `serverextension enable`, and `nbextension enable` commands in [Setup](#Setup).
 
 ```bash
-[dataviz] pip list --outdated
+[automata] pip list --outdated
 ```
 
 ### TBD

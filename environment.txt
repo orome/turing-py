@@ -4,4 +4,5 @@ ipython
 jupyter
 jupyterlab
 jupyterlab-git
+jupyter-kite
 ipywidgets
