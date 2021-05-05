@@ -9,21 +9,28 @@ cd .../automata
 ```
 
 ```bash
-mkvirtualenv --python=`which python3` automata
+mkvirtualenv --python=`which python` automata
 [automata] pip install -r environment.txt
 [automata] pip install -r requirements.txt
 ```
 
 ```bash
 [automata] python -m ipykernel install --user --name 'automata_env' --display-name 'automata (Python 3, venv)'
-[automata] jupyter labextension install @jupyterlab/git
-[automata] jupyter labextension install @jupyterlab/toc
-[automata] jupyter labextension install @jupyter-widgets/jupyterlab-manager
-[automata] jupyter labextension install @pyviz/jupyterlab_pyviz
-[automata] jupyter labextension install @kiteco/jupyterlab-kite
-[automata] jupyter serverextension enable --py jupyterlab_git
-[automata] jupyter nbextension enable --py widgetsnbextension --sys-prefix
 [automata] jupyter labextension list
+```
+
+#### Clean start
+
+```bash
+[automata] jupyter kernelspec remove automata_env
+rmvirtualenv automata
+```
+
+or if Jupyter is the problem just try
+
+```bash
+jupyter lab clean --all
+jupyter lab build
 ```
 
 ### Use
@@ -44,26 +51,26 @@ Optionally (before `jupyter lab`), update packages:
 and then either
 
 ```bash
-[automata] jupyter lab build
-[automata] jupyter labextension list
-
+[dataviz] jupyter lab build
+[dataviz] jupyter labextension list
 ```
-or repeat the Jupyter `labextension install`, `serverextension enable`, and `nbextension enable` commands in [Setup](#Setup).
+or manage extensions using the extension manager.
 
-```bash
-[automata] pip list --outdated
-```
 
 ### TBD
 
 #### Additional commands
 
 ```bash
-jupyter labextension list
+[dataviz] jupyter labextension list
 ```
+
+```bash
+[dataviz] pip list --outdated
+```
+
 #### Environment
 
-- See about using the extension manager?
 - More [detailed configuration](http://holoviews.org/user_guide/Installing_and_Configuring.html) (esp. overcoming rate limiting)
 - Review [Jupyter Lab features and extensions](https://towardsdatascience.com/jupyter-lab-evolution-of-the-jupyter-notebook-5297cacde6b)
 - Better collapsing or section navigation?

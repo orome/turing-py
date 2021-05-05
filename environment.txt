@@ -1,8 +1,9 @@
-# Requirments for setting up the enviroment, distinct from requriemnts for code in project
-ipykernel
-ipython
-jupyter
+# Requirements for setting up the environment, distinct from requirements for packages or code in project
+
 jupyterlab
-jupyterlab-git
-jupyter-kite
 ipywidgets
+#pyviz_comms
+#ipympl
+
+jupyterlab-kite
+jupyterlab-git
