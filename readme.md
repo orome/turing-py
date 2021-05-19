@@ -37,7 +37,7 @@ jupyter lab build
 
 ```bash
 cd .../automata
-[automata] workon automata
+workon automata
 [automata] jupyter lab
 ```
 
