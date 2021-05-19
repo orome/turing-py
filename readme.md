@@ -44,8 +44,8 @@ workon automata
 Optionally (before `jupyter lab`), update packages:
 
 ```bash
-[automata] pip install -U -r environment.txt
-[automata] pip install -U -r requirements.txt
+[automata] pip install -U -r environment.txt --upgrade-strategy eager
+[automata] pip install -U -r requirements.txt --upgrade-strategy eager
 ```
 
 and then either
