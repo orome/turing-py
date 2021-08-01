@@ -2,6 +2,8 @@
 
 A project for incubating and tempating basic data visualization and wrangling using Python 3.9.
 
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/orome/automata-py.git/HEAD)
+
 ### Setup
 
 ```bash
