@@ -3,16 +3,14 @@
 
 """ 
 A simple Turing Machine implementation aimed at simulating the machines in Turing's 1936 paper.
-
-.. note::
-    Any additional note.
 """
 
 from __future__ import annotations
 
 import collections
 import re
-from typing import Union, NamedTuple
+import typing
+from typing import Union, NamedTuple, Generator
 from enum import IntEnum
 from copy import deepcopy
 # from sys import exit
@@ -111,82 +109,13 @@ E = ' '     # E for "empty"
 F_SYMBOLS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 E_SYMBOLS = list('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
-# See for how these look on various platforms - https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit
+# See how these look on various platforms - https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit
 _HIGHLIGHT_SYMBOL_FMT = "|{}|"  # "\u001b[44m\u001b[37;1m{}\u001b[0m"
 _HIGHLIGHT_M_CONFIG_FMT = _HIGHLIGHT_SYMBOL_FMT   # "\u001b[44m\u001b[37;1m{}\u001b[0m"
 _HIGHLIGHT_ANNOTATION_FMT = "{}"
 _HIGHLIGHT_WRITTEN_FMT = "\u001b[4m{}\u001b[24m"
 
-# TBD - Isolate messy instructions for parsing in Instructions class. Same with tape. Deal with encoding stuff better. <<<
-# !!! - Definition of alternating machine puts a step where a symbol should be (or vice versa) Still true??
-# TBD - Fix utils.print_over to handle overwriting of variable number of lines <<<
-# TBD - Fix _instructions_table so that it doesn't rely on lists, tidy _instructions_str now that it does not have to deal with tables <<<
-# TBD - Fix places where private functions are being used; tidy up properties <<<
-# TBD - Better differentiate handling of representations that don't work as lists of instructions vs those that do <<<
-# TBD - Option to print blank differently <<<
-# TBD - Representation as table (in various ways) <<<
-# TBD - Handle tape representations in parallel with instructions; make sure formatting defs are in the right place <<<
 
-# TBD - Catch places where standard form is required; test reordering with machine in standard form <<<
-# TBD - Convert instructions to standard form <<<
-# TBD - Add list of manipulations/transformations (add no ops, explicit match, etc.) as args to Transitions constructor <<<
-# !!! - Fix no op writes in no op operations; see how this is done in Turing <<<
-# TBD - Where add_no_op_instructions is handled, set a property; check where required true (e.g. wolfram representation) <<<
-# TBD - Import turingmachine.io format <<<
-# TBD - Import Wolfram format <<<
-# REV - Decide whether to handle tuples and leave the provided dict unchanged
-# TBD - Fix adding no op instructions to use explicit_configs and to handle entirely missing initial_m_config <<<
-# TBD - Enforce / check standard form <<<
-# TBD - Implement _is_long_moves and handle in display
-# TBD - Add unit tests and reorganize tests (use example from Enigma project) <<<
-# TBD - Better formatting of comments with tape/config; as new output form or option to str_ functions in class <<<
-# TBD - Expand display_text() with decoration, highlight, arguments, comment on additional line, long state name, etc.
-# TBD - Pull highlighting out into separate utility <<<
-# TBD - Reorganize tape as function like instructions, with various representations <<<
-# TBD - Add tabular formats for transitions <<<
-# TBD - Save entire previous behavior (not just self._step_comment); use in new display (e.g. tuple for last used rule)
-# TBD - Redo formatting for symbols, etc, to be more general
-# TBD - Use representations (e.g. SD encoding) for tape and complete configurations as well
-# TBD - Add better handling (detection and marking?) of display for multi character m-configurations
-# TBD - Grow left; fix mishandling of blank on left (see test)
-# TBD - Note where Turing conventions are assumed/enforced (eg one direction, single character symbols); opt disable
-# TBD - Decide how to enforce conventions
-# TBD - Add support for E and F squares; note as convention; opt for no erasures of F squares
-# TBD - Document behavior and instruction format and argument requirements
-# TBD - Use "configuration" (m-config + scanned symbol) in names and docs, check use of config vs m_config
-# TBD - Validation of arguments and rules
-# TBD - Warn in docs that multi character state may not work with some representations
-# TBD - Skeleton tables
-# TBD - Generalize and clean up dict_from_representation, especially splitting up of instructions into m_configs and ops
-# TBD - Add alternate representation for blank (e.g. underline)
-# TBD - Further examples
-#       Universal Turing Machine: https://link.springer.com/content/pdf/bbm%3A978-1-84882-555-0%2F1.pdf
-#       Square root of 2 program (and accuracy test) - https://www.math.utah.edu/~pa/math/q1.html
-#       Implement representations on pp 146 and 148 <<<
-# TBD - Change handling of YAML to generate JSON (listable?) and then convert to YAML for non list output
-# TBD - Support dict_from_representation for YAML/JSON and wolfram (assert no long moves)
-# TBD - CLI
-# TBD - Graphic/matplotlib version of display_text
-# TBD - Support alternate names for the various representations (SD, DN, etc.)
-# TBD - Allow various ways of providing arguments to constructor
-# TBD - Check single character symbols and m_configurations for presentations that assume it
-# TBD - Puzzle: find another member of the pattern Description number -> Output
-# TBD - Terms for: behavior provided for all configurations (even no ops), behavior = one move on char, one char match
-#       Ask on SE, add her and in Automata doc <<<
-#       Use terms above in names and docs
-# REV - Copy arguments provided as lists (e.g. symbol_ordering)
-# REV - Add support for lists of m_configurations of  "else"/"any"/"all"; for now must explicitly list
-# REV - Force ints to chrs in creating processed instructions?
-# REV - Allow providing of alternate single symbol m-mconfig (for some presentations)?
-
-
-# instructionsDict are dictionaries of the form
-#   {start_m_config: {matched_character_1: behavior_1, ...}}
-# where for convenience, matched_character_1 can be a tuple of matched characters, and the behaviors may be provided
-# as tuples rather than Behaviors.
-# Where tuples of matched characters are provided, these will be replaced with one entry of the form above for each
-# character in the tuple. If all provided behaviors are in standard form, then self._is_standard_form == True.
-# REV - Allow Behavior to be alternately specified as just a tuple (coerced when used)
 
 InstructionsDict = dict[MConfig, dict[Union[Symbol, tuple[Symbol]], Union[Behavior, tuple]]]
 
@@ -439,7 +368,7 @@ class Table(object):
 
     def instructions(self, instruction_format: InstructionFormat = None,
                      table_format: TableFormat = None) -> Union[InstructionsDict, list, str]:
-        # !!! - Why wont the rest of this test work? <<<
+        # !!! - Why won't the rest of this test work? <<<
         if instruction_format == 'YAML' or table_format == 'YAML':
             instruction_format = 'YAML'
             table_format = 'YAML'
@@ -584,7 +513,7 @@ class TuringMachine(object):
 
     # Sequential states of the machine, starting with the current state and leaving the machine in the last state
     def steps(self, steps: int = None, include_current: bool = True, reset: bool = True, extend: bool = False,
-              auto_halt: bool = False, debug: bool = False) -> generator[TuringMachine, None, None]:
+              auto_halt: bool = False, debug: bool = False) -> Generator[TuringMachine, None, None]:
         if extend:
             reset = False
             include_current = False
