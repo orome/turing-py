@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+# Special config for use with JupyterLab (including Binder)
+# See https://discourse.jupyter.org/t/what-is-installed-by-default-with-binder/10217/5
+
+# !!! locally: Not for local use <<<
+
+# echo "\n" | bash -c "$(wget -q -O - https://linux.kite.com/dls/linux/current)"
+
+git config --global user.email "binder.user@example.com"
+git config --global user.name "Binder User"
+git config --global fetch.prune true
+git config --global status.showUntrackedFiles no
+
+
+mkdir -p ~/.jupyter/lab/user-settings/@jupyterlab
+
+mkdir ~/.jupyter/lab/user-settings/@jupyterlab/git
+cp ~/.binder/git/plugin.jupyterlab-settings ~/.jupyter/lab/user-settings/@jupyterlab/git/
+
+mkdir ~/.jupyter/lab/user-settings/@jupyterlab/terminal-extension
+cp ~/.binder/terminal-extension/plugin.jupyterlab-settings ~/.jupyter/lab/user-settings/@jupyterlab/terminal-extension/
+
+cp -rf ~/.binder/exclude ~/.git/info
+
+echo -e "source ~/.binder/bash_extra" >> ~/.bashrc
+
+

@@ -1,0 +1,22 @@
+# Requrements for use with Binder (or local JupyterLab if what works on Binder is sufficient)
+# See https://discourse.jupyter.org/t/what-is-installed-by-default-with-binder/10217/5
+
+# USE locally:
+# $ workon automata
+# [automata] pip install -U -r .binder/requirements.txt
+
+-r ../requirements.txt
+#-e ..                      # if using a setup.py
+
+jupyterlab >=3.1
+
+nbdime
+#jupyterlab-kite            # doesn't work on Binder; install seperately for local use
+jupyterlab-git
+ipywidgets                  # already installed by Binder
+#pyviz_comms
+#ipympl
+
+#nbgitpuller                # see https://jupyterhub.github.io/nbgitpuller/link
+jupyterlab-link-share
+#jupyter-videochat

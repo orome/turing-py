@@ -1,0 +1,17 @@
+.local/share/*
+.local/*
+.binder/*
+.config*
+.ipynb_checkpoints/*
+.profile
+.jupyter/*
+.ipython/*
+*-log.txt
+*.ipython/*
+.cache/*
+*.bash*
+*.git*
+__pycache__/*
+*exclude
+.gitignore
+*postBuild

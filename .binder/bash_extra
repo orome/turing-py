@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+declare PSCOLORPATH='\[\e[0;33m\]'
+declare PSCOLORPROMPT='\[\e[1;32m\]'
+declare PSCOLORHOST='\[\e[0;32m\]'
+declare PSCOLOROOT='\[\e[1;31m\]'
+declare PSCOLOREND='\[\e[m\]'
+
+declare PSHOST=''
+PS1_INFO="$PSCOLORHOST$PSHOST$PSCOLORPATH\w"
+PS1_PROMPT="$PSCOLORPROMPT \\$ $PSCOLOREND"
+declare -x PS1="$PS1_INFO$PS1_PROMPT"
+declare -x PS2="$PSCOLORPROMPT> $PSCOLOREND"
+declare -x PS4="$PSCOLORPROMPT+ $PSCOLOREND"
+
+alias l="ls -FG"
+alias ll="ls -lFAG"
+alias lls="ls -dlFAG"
+alias lll="ls -lFAeG"
+
+export LSCOLORS=GxfxcxdxBxebxdBhBHAgag
+export LS_COLORS='di=1;36:ln=35:so=32:pi=33:ex=1;31:bd=34;41:cd=0;43:su=1;31;47:sg=1;31;1;47:tw=1;30;46:ow=30;46'
