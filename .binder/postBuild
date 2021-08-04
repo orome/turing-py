@@ -21,6 +21,9 @@ cp ~/.binder/git/plugin.jupyterlab-settings ~/.jupyter/lab/user-settings/@jupyte
 mkdir ~/.jupyter/lab/user-settings/@jupyterlab/terminal-extension
 cp ~/.binder/terminal-extension/plugin.jupyterlab-settings ~/.jupyter/lab/user-settings/@jupyterlab/terminal-extension/
 
+mkdir ~/.jupyter/lab/user-settings/@jupyterlab/extensionmanager-extension
+cp ~/.binder/extensionmanager-extension/plugin.jupyterlab-settings ~/.jupyter/lab/user-settings/@jupyterlab/extensionmanager-extension/
+
 cp -rf ~/.binder/exclude ~/.git/info
 
 echo -e "source ~/.binder/bash_extra" >> ~/.bashrc
