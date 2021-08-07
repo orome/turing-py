@@ -11,12 +11,16 @@
 jupyterlab >=3.1
 
 nbdime
-#jupyterlab-kite            # doesn't work on Binder; install seperately for local use
 #jupyterlab-git             # restore instead of nbgitpuller when issue 998 is resolved
-ipywidgets                  # already installed by Binder
-#pyviz_comms
-#ipympl
-
 nbgitpuller                # see https://jupyterhub.github.io/nbgitpuller/link
 jupyterlab-link-share
 #jupyter-videochat
+#jupyterlab-kite            # doesn't work on Binder; install seperately for local use
+
+ipywidgets                  # already installed by Binder?
+ipympl
+
+
+
+
+
