@@ -24,6 +24,9 @@ cp ~/.binder/terminal-extension/plugin.jupyterlab-settings ~/.jupyter/lab/user-s
 mkdir ~/.jupyter/lab/user-settings/@jupyterlab/extensionmanager-extension
 cp ~/.binder/extensionmanager-extension/plugin.jupyterlab-settings ~/.jupyter/lab/user-settings/@jupyterlab/extensionmanager-extension/
 
+mkdir ~/.jupyter/lab/user-settings/@jupyterlab/codemirror-extension
+cp ~/.binder/codemirror-extension/commands.jupyterlab-settings  ~/.jupyter/lab/user-settings/@jupyterlab/codemirror-extension/
+
 cp -rf ~/.binder/exclude ~/.git/info
 
 echo -e "source ~/.binder/bash_extra" >> ~/.bashrc
