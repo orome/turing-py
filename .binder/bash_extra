@@ -16,7 +16,6 @@ declare -x PS4="$PSCOLORPROMPT+ $PSCOLOREND"
 alias l="ls -FG"
 alias ll="ls -lFAG"
 alias lls="ls -dlFAG"
-alias lll="ls -lFAeG"
 
 export LSCOLORS=GxfxcxdxBxebxdBhBHAgag
 export LS_COLORS='di=1;36:ln=35:so=32:pi=33:ex=1;31:bd=34;41:cd=0;43:su=1;31;47:sg=1;31;1;47:tw=1;30;46:ow=30;46'

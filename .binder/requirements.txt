@@ -1,7 +1,7 @@
 # Requrements for use with Binder (or local JupyterLab if what works on Binder is sufficient)
 # See https://discourse.jupyter.org/t/what-is-installed-by-default-with-binder/10217/5
 
-# USE locally:
+# USE locally (generally _requrments.txt is more appropriate):
 # $ workon automata
 # [automata] pip install -U -r .binder/requirements.txt
 
