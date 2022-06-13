@@ -6,7 +6,7 @@
 -r ../requirements.txt
 #-e ..                      # if using a setup.py
 
-jupyterlab >=3.1
+jupyterlab >=3.3
 
 nbdime
 #jupyterlab-git             # restore instead of nbgitpuller when issue 998 is resolved
