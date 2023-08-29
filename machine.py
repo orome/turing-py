@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf8
 
-""" 
+"""
 A simple Turing Machine implementation aimed at simulating the machines in Turing's 1936 paper.
 """
 
@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import collections
 import re
-import typing
+# import typing
 from typing import Union, NamedTuple, Generator
 from enum import IntEnum
 from copy import deepcopy
@@ -462,7 +462,7 @@ class TuringMachine(object):
     # TBD - Expand with decoration, highlight, arguments
     # TBD - Pull highlighting out into own utility function
     # Display a formatted version of the complete configuration, with optional highlighting and annotation
-    def display_text(self, 
+    def display_text(self,
                      show_step: bool = False,  # step_pad: tuple = (10, '0'),
                      symbol_highlight: str = None, m_config_highlight: str = None, annotations_highlight: str = None,
                      show_behavior: bool = False, show_comments: bool = False,
@@ -481,13 +481,13 @@ class TuringMachine(object):
         tape_txt[self._position] = symbol_highlight.format(tape_txt[self._position])
         # m_config_txt[self._position] = m_config_highlight.format(self._m_configuration)
 
-        
+
         step_behavior = None
         try:
-            step_behavior = self._table.behavior(self._m_configuration, self._tape[self._position])           
+            step_behavior = self._table.behavior(self._m_configuration, self._tape[self._position])
         except (UnknownMConfig, UnknownSymbol):
             pass
-        
+
         rule_txt = annotations_highlight.format(Behavior.str_behavior(step_behavior, show_comments)) if show_behavior else ''
         m_config_txt = ' ' * self._position + m_config_highlight.format(self._m_configuration) + rule_txt
         display_lines = [''.join(tape_txt), ''.join(m_config_txt)]
