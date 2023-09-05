@@ -10,3 +10,5 @@ perpetually very much under construction.
 To play with the latest semi-stable version, 
 [launch the demo notebook](https://mybinder.org/v2/gh/orome/turing-py.git/master/?urlpath=lab/tree/demo.ipynb) 
 in Binder.
+
+A [related project](https://github.com/orome/automata-py) covers some basic cellular automata.
